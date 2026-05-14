@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SION — Reza Aditya Lasoma</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#ff2244;
+  --red-dim:#cc1133;
+  --red-glow:rgba(255,34,68,0.35);
+  --gold:#ffd700;
+  --gold-dim:#cc9900;
+  --gold-glow:rgba(255,215,0,0.3);
+  --bg:#050205;
+  --bg2:#0a0408;
+  --bg3:#110608;
+  --text:#f0d8dc;
+  --dim:#7a4450;
+  --card:rgba(20,5,8,0.85);
+  --border:rgba(255,34,68,0.18);
+  --border-gold:rgba(255,215,0,0.2);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;cursor:default}
+
+/* ═══════════════════════════════════
+   SCANLINES OVERLAY
+═══════════════════════════════════ */
+body::after{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+  pointer-events:none;z-index:9999;animation:scanMove 8s linear infinite
+}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 100px}}
+
+/* ═══════════════════════════════════
+   CANVAS
+═══════════════════════════════════ */
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+/* ═══════════════════════════════════
+   BOOT SCREEN
+═══════════════════════════════════ */
+#boot{
+  position:fixed;inset:0;background:#000;z-index:10000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;padding:2rem;
+  transition:opacity 0.8s ease
+}
+#boot.fade-out{opacity:0;pointer-events:none}
+.boot-header{
+  font-family:'Orbitron',monospace;font-size:clamp(1.2rem,4vw,2rem);
+  font-weight:900;color:var(--red);text-shadow:0 0 30px var(--red);
+  letter-spacing:6px;margin-bottom:2rem;text-align:center
+}
+.boot-header span{color:var(--gold);text-shadow:0 0 20px var(--gold)}
+.boot-log{
+  width:100%;max-width:600px;max-height:260px;overflow:hidden;
+  margin-bottom:2rem;font-size:clamp(0.65rem,1.8vw,0.8rem)
+}
+.bl{
+  display:flex;gap:.75rem;align-items:center;opacity:0;
+  transform:translateX(-10px);transition:all 0.3s ease;margin-bottom:.3rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.bl.show{opacity:1;transform:translateX(0)}
+.bl-ok{color:var(--gold);min-width:52px}
+.bl-warn{color:var(--red);min-width:52px}
+.bl-text{color:#c0a0a8}
+.bl-text.hl{color:var(--gold)}
+.boot-bar-wrap{width:100%;max-width:600px}
+.boot-bar-label{
+  display:flex;justify-content:space-between;
+  font-size:.7rem;color:var(--dim);margin-bottom:.4rem
+}
+.boot-bar-label span:last-child{color:var(--gold)}
+.boot-bar{height:3px;background:rgba(255,34,68,0.1);border-radius:2px;overflow:hidden}
+.boot-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width 0.3s ease;box-shadow:0 0 8px var(--red-glow)}
+.boot-skip{margin-top:1.5rem;font-size:.65rem;color:var(--dim);letter-spacing:2px;animation:blinkOp 1.5s infinite}
+@keyframes blinkOp{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ═══════════════════════════════════
+   NAV
+═══════════════════════════════════ */
+nav{
+  position:fixed;top:0;width:100%;z-index:500;height:56px;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 1.5rem;
+  background:rgba(5,2,5,0.96);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border)
+}
+.nav-logo{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:1rem;
+  color:var(--red);text-shadow:0 0 18px var(--red);letter-spacing:5px;cursor:pointer;
+  flex-shrink:0;user-select:none
+}
+.nav-logo span{color:var(--gold);text-shadow:0 0 12px var(--gold)}
+.nav-links{display:none;gap:0;list-style:none;align-items:center}
+.nav-btn{
+  background:transparent;border:none;cursor:pointer;
+  color:var(--dim);font-family:'Share Tech Mono',monospace;
+  font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  padding:.4rem .9rem;transition:all .25s;white-space:nowrap
+}
+.nav-btn:hover,.nav-btn.active{
+  color:var(--gold);text-shadow:0 0 8px var(--gold);
+  background:rgba(255,215,0,0.05)
+}
+.nav-btn.active{border-bottom:1px solid var(--gold)}
+
+/* HAMBURGER */
+.hamburger{
+  display:flex;flex-direction:column;gap:5px;
+  cursor:pointer;padding:8px;background:none;border:none;z-index:600
+}
+.hamburger span{
+  width:22px;height:2px;background:var(--red);display:block;
+  transition:all .3s;box-shadow:0 0 6px var(--red)
+}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* DRAWER */
+.drawer{
+  display:none;position:fixed;top:56px;left:0;width:100%;
+  background:rgba(5,2,5,0.99);z-index:490;
+  border-bottom:1px solid var(--border);
+  flex-direction:column;max-height:calc(100dvh - 56px);
+  overflow-y:auto;scrollbar-width:none
+}
+.drawer.open{display:flex}
+.drawer-btn{
+  background:transparent;border:none;border-bottom:1px solid rgba(255,34,68,0.06);
+  color:var(--dim);font-family:'Share Tech Mono',monospace;
+  font-size:.85rem;letter-spacing:2px;padding:1rem 1.5rem;
+  cursor:pointer;text-align:left;transition:all .2s
+}
+.drawer-btn:hover,.drawer-btn.active{
+  color:var(--gold);background:rgba(255,215,0,0.04)
+}
+
+/* ═══════════════════════════════════
+   PAGES
+═══════════════════════════════════ */
+.page{
+  position:fixed;top:56px;left:0;width:100%;
+  height:calc(100dvh - 56px);
+  overflow-y:auto;overflow-x:hidden;
+  z-index:1;opacity:0;pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;
+  transform:translateY(14px);
+  padding:2.5rem 1.5rem 5rem;
+  scrollbar-width:thin;scrollbar-color:var(--red) transparent
+}
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:var(--red)}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.page-inner{max-width:1000px;margin:0 auto;width:100%}
+
+/* ═══════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════ */
+#page-home{
+  display:flex!important;align-items:center;
+  justify-content:center;text-align:center;padding:1rem
+}
+.hero-wrap{position:relative;z-index:2;width:100%;padding:1rem}
+
+/* HUD corners */
+.hud-corner{position:absolute;width:28px;height:28px;pointer-events:none}
+.hud-tl{top:0;left:0;border-top:2px solid var(--gold);border-left:2px solid var(--gold)}
+.hud-tr{top:0;right:0;border-top:2px solid var(--gold);border-right:2px solid var(--gold)}
+.hud-bl{bottom:0;left:0;border-bottom:2px solid var(--gold);border-left:2px solid var(--gold)}
+.hud-br{bottom:0;right:0;border-bottom:2px solid var(--gold);border-right:2px solid var(--gold)}
+
+.glitch{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(3rem,14vw,8rem);
+  font-weight:900;color:var(--red);
+  text-shadow:0 0 40px var(--red),0 0 80px var(--red-glow);
+  position:relative;display:inline-block;letter-spacing:8px
+}
+.glitch::before,.glitch::after{
+  content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%
+}
+.glitch::before{
+  color:var(--gold);text-shadow:-3px 0 var(--gold);
+  animation:g1 2.5s infinite;
+  clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%)
+}
+.glitch::after{
+  color:#ff6688;text-shadow:3px 0 #ff6688;
+  animation:g2 2.5s infinite .4s;
+  clip-path:polygon(0 65%,100% 65%,100% 85%,0 85%)
+}
+@keyframes g1{0%,88%,100%{transform:translate(0)}90%{transform:translate(-5px,2px)}94%{transform:translate(5px,-2px)}97%{transform:translate(-2px,0)}}
+@keyframes g2{0%,85%,100%{transform:translate(0)}87%{transform:translate(5px,-2px)}92%{transform:translate(-5px,2px)}96%{transform:translate(3px,0)}}
+
+.hero-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.65rem,1.8vw,.85rem);
+  color:var(--dim);letter-spacing:4px;margin:.5rem 0 .3rem;
+  text-transform:uppercase
+}
+.hero-name{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(.9rem,2.5vw,1.2rem);
+  font-weight:700;color:var(--gold);
+  text-shadow:0 0 16px var(--gold);
+  letter-spacing:3px;margin-bottom:.3rem
+}
+.hero-school{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.65rem,1.5vw,.78rem);
+  color:var(--dim);letter-spacing:2px;margin-bottom:1.5rem
+}
+.typing-wrap{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.9rem,2.2vw,1.2rem);
+  color:var(--red);margin-bottom:2.5rem;min-height:2rem
+}
+#typed::after{content:'█';animation:blink .7s infinite;color:var(--gold);font-size:.8em}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hero-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.btn{
+  padding:.65rem 1.6rem;border:1px solid var(--red);
+  color:var(--red);font-family:'Share Tech Mono',monospace;
+  font-size:.72rem;letter-spacing:2px;text-transform:uppercase;
+  transition:all .3s;background:transparent;cursor:pointer;
+  position:relative;overflow:hidden;display:inline-block;
+  white-space:nowrap;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)
+}
+.btn::before{
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:rgba(255,34,68,0.1);transition:left .3s
+}
+.btn:hover::before{left:0}
+.btn:hover{box-shadow:0 0 20px var(--red-glow);color:var(--gold);border-color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.btn-gold{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.05)}
+.btn-gold::before{background:rgba(255,215,0,0.08)}
+.btn-gold:hover{box-shadow:0 0 20px var(--gold-glow)}
+
+/* ═══════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════ */
+.sec-head{margin-bottom:2.5rem}
+.sec-tag{
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--gold);letter-spacing:4px;margin-bottom:.4rem;opacity:.7
+}
+.sec-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1rem,3vw,1.8rem);
+  font-weight:900;color:var(--red);
+  letter-spacing:4px;text-transform:uppercase;
+  text-shadow:0 0 20px var(--red-glow);margin-bottom:.6rem
+}
+.sec-line{
+  width:60px;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold),transparent)
+}
+
+/* ═══════════════════════════════════
+   ABOUT PAGE
+═══════════════════════════════════ */
+.about-top{display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:start;margin-bottom:2.5rem}
+.about-avatar-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;flex-shrink:0}
+
+/* SMAN 8 LOGO PLACEHOLDER */
+.school-logo-placeholder{
+  width:90px;height:90px;
+  border:2px dashed var(--gold);
+  border-radius:50%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(255,215,0,0.04);
+  cursor:pointer;transition:all .3s;
+  position:relative;overflow:hidden
+}
+.school-logo-placeholder:hover{
+  border-color:var(--red);background:rgba(255,34,68,0.06);
+  box-shadow:0 0 20px var(--red-glow)
+}
+.school-logo-placeholder img{
+  width:100%;height:100%;object-fit:cover;border-radius:50%;display:none
+}
+.logo-placeholder-text{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.55rem;color:var(--gold);letter-spacing:1px;
+  text-align:center;line-height:1.4;padding:.5rem;
+  pointer-events:none
+}
+#logo-upload{display:none}
+
+.avatar-ring{
+  width:110px;height:110px;border-radius:50%;
+  border:2px solid var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:2.2rem;font-weight:900;
+  color:var(--red);text-shadow:0 0 30px var(--red);
+  box-shadow:0 0 40px var(--red-glow);
+  animation:pulseAv 3s infinite;flex-shrink:0
+}
+@keyframes pulseAv{0%,100%{box-shadow:0 0 30px var(--red-glow)}50%{box-shadow:0 0 55px rgba(255,34,68,0.5)}}
+
+.about-text p{
+  color:var(--text);line-height:1.9;font-size:1rem;
+  margin-bottom:.9rem;opacity:.88
+}
+.about-text strong{color:var(--gold)}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.2rem}
+.tag{
+  padding:.25rem .75rem;
+  border:1px solid rgba(255,215,0,0.25);
+  color:var(--gold);font-family:'Share Tech Mono',monospace;
+  font-size:.68rem;letter-spacing:1px;
+  background:rgba(255,215,0,0.04)
+}
+
+.about-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:2rem}
+.about-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.4rem;transition:border-color .3s,box-shadow .3s
+}
+.about-card:hover{border-color:var(--red);box-shadow:0 0 16px var(--red-glow)}
+.ac-icon{font-size:2rem;margin-bottom:.6rem}
+.ac-title{
+  font-family:'Orbitron',monospace;font-size:.68rem;
+  color:var(--gold);letter-spacing:2px;margin-bottom:.5rem
+}
+.ac-text{font-size:.85rem;color:var(--dim);line-height:1.6}
+
+/* ═══════════════════════════════════
+   SKILLS PAGE
+═══════════════════════════════════ */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.skill-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem;transition:border-color .3s,box-shadow .3s
+}
+.skill-card:hover{border-color:var(--gold);box-shadow:0 0 16px var(--gold-glow)}
+.skill-card-title{
+  font-family:'Orbitron',monospace;font-size:.7rem;
+  color:var(--gold);letter-spacing:3px;margin-bottom:1.2rem;
+  padding-bottom:.6rem;border-bottom:1px solid rgba(255,215,0,0.1)
+}
+.skill-item{margin-bottom:1rem}
+.skill-label{
+  display:flex;justify-content:space-between;
+  margin-bottom:.4rem;font-size:.85rem;color:var(--text)
+}
+.skill-pct{color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:.75rem}
+.skill-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.skill-fill{
+  height:100%;width:0%;border-radius:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold));
+  box-shadow:0 0 8px var(--red-glow);
+  transition:width 1.2s cubic-bezier(.4,0,.2,1)
+}
+
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.75rem;margin-top:1.5rem}
+.tool-chip{
+  background:rgba(255,34,68,0.05);
+  border:1px solid var(--border);
+  padding:.6rem .4rem;text-align:center;
+  transition:all .3s;cursor:default
+}
+.tool-chip:hover{border-color:var(--gold);background:rgba(255,215,0,0.06)}
+.tool-icon{font-size:1.5rem;display:block;margin-bottom:.3rem}
+.tool-name{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.6rem;color:var(--dim);letter-spacing:1px
+}
+
+/* ═══════════════════════════════════
+   PROJECTS PAGE
+═══════════════════════════════════ */
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.proj-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem;transition:all .3s;position:relative;overflow:hidden
+}
+.proj-card::before{
+  content:'';position:absolute;top:0;left:0;
+  width:3px;height:0%;
+  background:linear-gradient(180deg,var(--red),var(--gold));
+  transition:height .4s ease
+}
+.proj-card:hover::before{height:100%}
+.proj-card:hover{border-color:rgba(255,34,68,0.35);box-shadow:0 0 24px var(--red-glow);transform:translateY(-2px)}
+.proj-num{
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--red);letter-spacing:2px;margin-bottom:.5rem;opacity:.7
+}
+.proj-title{
+  font-family:'Orbitron',monospace;font-size:.95rem;
+  font-weight:700;color:var(--gold);letter-spacing:2px;
+  margin-bottom:.75rem
+}
+.proj-desc{
+  font-size:.9rem;color:var(--dim);line-height:1.7;
+  margin-bottom:1rem
+}
+.proj-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
+.proj-tag{
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;
+  color:var(--red);border:1px solid rgba(255,34,68,0.25);
+  padding:.2rem .5rem;background:rgba(255,34,68,0.04)
+}
+.proj-link{
+  font-family:'Share Tech Mono',monospace;font-size:.68rem;
+  color:var(--gold);letter-spacing:2px;text-decoration:none;
+  border-bottom:1px solid rgba(255,215,0,0.3);
+  padding-bottom:1px;transition:all .2s
+}
+.proj-link:hover{color:var(--red);border-color:var(--red)}
+.proj-status{
+  position:absolute;top:1rem;right:1rem;
+  font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  letter-spacing:1px;padding:.2rem .5rem;
+  background:rgba(255,215,0,0.08);color:var(--gold);
+  border:1px solid rgba(255,215,0,0.2)
+}
+.proj-status.wip{
+  background:rgba(255,34,68,0.08);color:var(--red);
+  border-color:rgba(255,34,68,0.2)
+}
+
+/* ═══════════════════════════════════
+   CONTACT PAGE
+═══════════════════════════════════ */
+.contact-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.contact-info-block{display:flex;flex-direction:column;gap:1rem}
+.contact-item{
+  display:flex;align-items:center;gap:1rem;
+  background:var(--card);border:1px solid var(--border);
+  padding:1.2rem;transition:all .3s
+}
+.contact-item:hover{border-color:var(--gold);box-shadow:0 0 14px var(--gold-glow)}
+.ci-icon{font-size:1.4rem;flex-shrink:0}
+.ci-label{
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;
+  color:var(--dim);letter-spacing:2px;margin-bottom:.2rem
+}
+.ci-val{
+  font-size:.9rem;color:var(--text);font-weight:500;
+  word-break:break-all
+}
+.ci-val a{color:var(--gold);text-decoration:none}
+.ci-val a:hover{text-shadow:0 0 8px var(--gold)}
+
+.contact-msg{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem
+}
+.contact-msg-title{
+  font-family:'Orbitron',monospace;font-size:.75rem;
+  color:var(--gold);letter-spacing:3px;margin-bottom:1.2rem
+}
+.c-field{margin-bottom:1rem}
+.c-field label{
+  display:block;font-family:'Share Tech Mono',monospace;
+  font-size:.65rem;color:var(--dim);letter-spacing:2px;
+  margin-bottom:.4rem
+}
+.c-field input,.c-field textarea{
+  width:100%;background:rgba(255,34,68,0.04);
+  border:1px solid var(--border);color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;
+  padding:.6rem .8rem;outline:none;
+  transition:border-color .3s,box-shadow .3s;
+  resize:none
+}
+.c-field input:focus,.c-field textarea:focus{
+  border-color:var(--red);box-shadow:0 0 10px var(--red-glow)
+}
+.c-field textarea{height:100px}
+.btn-send{
+  width:100%;padding:.75rem;
+  background:rgba(255,34,68,0.08);
+  border:1px solid var(--red);color:var(--red);
+  font-family:'Share Tech Mono',monospace;font-size:.75rem;
+  letter-spacing:3px;cursor:pointer;
+  transition:all .3s;text-transform:uppercase
+}
+.btn-send:hover{
+  background:rgba(255,34,68,0.15);
+  box-shadow:0 0 20px var(--red-glow);
+  color:var(--gold);border-color:var(--gold)
+}
+
+/* ═══════════════════════════════════
+   FOOTER
+═══════════════════════════════════ */
+.page-footer{
+  text-align:center;margin-top:3rem;padding-top:1.5rem;
+  border-top:1px solid rgba(255,34,68,0.1);
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--dim);letter-spacing:2px
+}
+.page-footer span{color:var(--red)}
+.page-footer strong{color:var(--gold)}
+
+/* ═══════════════════════════════════
+   HUD ELEMENTS
+═══════════════════════════════════ */
+.hud-line{
+  position:fixed;bottom:1.2rem;left:1.5rem;
+  font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  color:rgba(255,34,68,0.35);letter-spacing:2px;z-index:100;
+  pointer-events:none
+}
+.hud-line span{color:rgba(255,215,0,0.4)}
+
+/* ═══════════════════════════════════
+   RESPONSIVE — TABLET (iPad)
+═══════════════════════════════════ */
+@media(min-width:600px){
+  .nav-links{display:flex}
+  .hamburger{display:none}
+  .about-top{gap:2.5rem}
+  .contact-wrap{gap:2rem}
+}
+
+/* ═══════════════════════════════════
+   RESPONSIVE — DESKTOP
+═══════════════════════════════════ */
+@media(min-width:900px){
+  .page{padding:3rem 3rem 5rem}
+  .about-top{grid-template-columns:auto 1fr}
+  .avatar-ring{width:130px;height:130px;font-size:2.8rem}
+  .school-logo-placeholder{width:100px;height:100px}
+}
+
+/* MOBILE ONLY */
+@media(max-width:599px){
+  .about-top{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .about-avatar-wrap{flex-direction:row;justify-content:center}
+  .tags{justify-content:center}
+  .contact-wrap{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .hamburger{display:flex}
+}
+
+/* ═══════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════ */
+.fade-in{animation:fadeIn .6s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot">
+  <div class="boot-header">S<span>I</span>ON<span>.EXE</span></div>
+  <div class="boot-log" id="boot-log"></div>
+  <div class="boot-bar-wrap">
+    <div class="boot-bar-label">
+      <span id="boot-status">INITIALIZING...</span>
+      <span id="boot-pct">0%</span>
+    </div>
+    <div class="boot-bar"><div class="boot-bar-fill" id="boot-fill"></div></div>
+  </div>
+  <div class="boot-skip">[ CLICK OR PRESS ANY KEY TO SKIP ]</div>
+</div>
+
+<!-- CANVAS -->
+<canvas id="canvas-bg"></canvas>
+
+<!-- HUD -->
+<div class="hud-line">SYS:<span>ONLINE</span> &nbsp;|&nbsp; USER:<span>SION</span> &nbsp;|&nbsp; <span id="hud-time"></span></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goPage('home')">S<span>I</span>ON</div>
+  <ul class="nav-links" id="nav-links">
+    <li><button class="nav-btn active" onclick="goPage('home')">Home</button></li>
+    <li><button class="nav-btn" onclick="goPage('about')">About</button></li>
+    <li><button class="nav-btn" onclick="goPage('skills')">Skills</button></li>
+    <li><button class="nav-btn" onclick="goPage('projects')">Projects</button></li>
+    <li><button class="nav-btn" onclick="goPage('contact')">Contact</button></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE DRAWER -->
+<div class="drawer" id="drawer">
+  <button class="drawer-btn active" onclick="goPage('home');closeDrawer()">// HOME</button>
+  <button class="drawer-btn" onclick="goPage('about');closeDrawer()">// ABOUT</button>
+  <button class="drawer-btn" onclick="goPage('skills');closeDrawer()">// SKILLS</button>
+  <button class="drawer-btn" onclick="goPage('projects');closeDrawer()">// PROJECTS</button>
+  <button class="drawer-btn" onclick="goPage('contact');closeDrawer()">// CONTACT</button>
+</div>
+
+<!-- ══════════ PAGE: HOME ══════════ -->
+<div class="page active" id="page-home">
+  <div class="hero-wrap" style="position:relative;display:inline-block;padding:2rem 3rem">
+    <div class="hud-corner hud-tl"></div>
+    <div class="hud-corner hud-tr"></div>
+    <div class="hud-corner hud-bl"></div>
+    <div class="hud-corner hud-br"></div>
+    <div class="hero-label">// IDENTITY VERIFIED //</div>
+    <div class="glitch" data-text="SION">SION</div>
+    <div class="hero-name">REZA ADITYA LASOMA</div>
+    <div class="hero-school">📍 SMAN 8 JAKARTA &nbsp;·&nbsp; CLASS OF 2026</div>
+    <div class="typing-wrap"><span id="typed"></span></div>
+    <div class="hero-btns">
+      <button class="btn btn-gold" onclick="goPage('projects')">View Projects</button>
+      <button class="btn" onclick="goPage('contact')">Contact Me</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: ABOUT ══════════ -->
+<div class="page" id="page-about">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// PROFILE_SCAN</div>
+      <div class="sec-title">About Me</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="about-top fade-in">
+      <div class="about-avatar-wrap">
+        <div class="avatar-ring">RA</div>
+
+        <!-- SMAN 8 LOGO PLACEHOLDER — replace src="" with your logo path -->
+        <label for="logo-upload" title="Click to upload SMAN 8 logo">
+          <div class="school-logo-placeholder" id="logo-placeholder">
+            <img id="logo-img" src="" alt="SMAN 8 Logo">
+            <div class="logo-placeholder-text" id="logo-text">
+              🏫<br>SMAN 8<br>LOGO<br><span style="color:var(--red);font-size:.5rem">[ CLICK TO UPLOAD ]</span>
+            </div>
+          </div>
+        </label>
+        <input type="file" id="logo-upload" accept="image/*">
+      </div>
+
+      <div class="about-text">
+        <p>Hey — I'm <strong>Reza Aditya Lasoma</strong>, known online as <strong>SION</strong>. I'm a student at <strong>SMAN 8 Jakarta</strong> with a deep passion for technology, design, and building things that live on the internet.</p>
+        <p>I explore the intersection of <strong>code, creativity, and digital experience</strong> — from crafting slick UIs to diving into web development, graphic design, and whatever new tech catches my attention.</p>
+        <p>Always learning. Always building. Always pushing past the edge of what I thought I could do.</p>
+        <div class="tags">
+          <span class="tag">Web Dev</span>
+          <span class="tag">UI/UX Design</span>
+          <span class="tag">Student</span>
+          <span class="tag">Creator</span>
+          <span class="tag">SMAN 8 JKT</span>
+          <span class="tag">Tech Enthusiast</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-cards fade-in">
+      <div class="about-card">
+        <div class="ac-icon">🎓</div>
+        <div class="ac-title">Education</div>
+        <div class="ac-text">SMAN 8 Jakarta<br>Class of 2026</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">💻</div>
+        <div class="ac-title">Focus</div>
+        <div class="ac-text">Frontend Dev · UI Design · Digital Creativity</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">🎮</div>
+        <div class="ac-title">Hobbies</div>
+        <div class="ac-text">Gaming · Design · Music · Exploring New Tech</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">🚀</div>
+        <div class="ac-title">Mission</div>
+        <div class="ac-text">Build digital experiences that leave a lasting legacy</div>
+      </div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: SKILLS ══════════ -->
+<div class="page" id="page-skills">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// SYSTEM_CAPABILITIES</div>
+      <div class="sec-title">Skills</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="skills-grid fade-in">
+      <div class="skill-card">
+        <div class="skill-card-title">// FRONTEND</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>HTML & CSS</span><span class="skill-pct">90%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="90"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>JavaScript</span><span class="skill-pct">75%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="75"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Responsive Design</span><span class="skill-pct">85%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="85"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>WordPress</span><span class="skill-pct">70%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="70"></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">// DESIGN</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>UI / UX Design</span><span class="skill-pct">80%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="80"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Figma</span><span class="skill-pct">72%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="72"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Graphic Design</span><span class="skill-pct">78%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="78"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Photo Editing</span><span class="skill-pct">65%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="65"></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">// GENERAL</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Problem Solving</span><span class="skill-pct">88%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="88"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Teamwork</span><span class="skill-pct">92%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="92"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Fast Learner</span><span class="skill-pct">95%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="95"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Creativity</span><span class="skill-pct">90%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="90"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head fade-in" style="margin-top:2.5rem;margin-bottom:1rem">
+      <div class="sec-tag">// TOOLS_LOADED</div>
+    </div>
+    <div class="tools-grid fade-in">
+      <div class="tool-chip"><span class="tool-icon">🌐</span><div class="tool-name">VS Code</div></div>
+      <div class="tool-chip"><span class="tool-icon">🎨</span><div class="tool-name">Figma</div></div>
+      <div class="tool-chip"><span class="tool-icon">📝</span><div class="tool-name">WordPress</div></div>
+      <div class="tool-chip"><span class="tool-icon">🖼️</span><div class="tool-name">Canva</div></div>
+      <div class="tool-chip"><span class="tool-icon">📱</span><div class="tool-name">Adobe XD</div></div>
+      <div class="tool-chip"><span class="tool-icon">🐙</span><div class="tool-name">GitHub</div></div>
+      <div class="tool-chip"><span class="tool-icon">📊</span><div class="tool-name">Google Suite</div></div>
+      <div class="tool-chip"><span class="tool-icon">⚡</span><div class="tool-name">Notion</div></div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: PROJECTS ══════════ -->
+<div class="page" id="page-projects">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// PROJECT_MANIFESTS</div>
+      <div class="sec-title">Projects</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="projects-grid fade-in">
+
+      <div class="proj-card">
+        <div class="proj-status">PUBLIC</div>
+        <div class="proj-num">// PROJECT_01</div>
+        <div class="proj-title">secret-doksli</div>
+        <div class="proj-desc">A mysterious public repo — just "id". Updated just recently, suggesting something active is brewing here. Stay curious.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">Public</span>
+          <span class="proj-tag">Active</span>
+          <span class="proj-tag">Mystery</span>
+        </div>
+        <a href="https://github.com/SION1256/secret-doksli" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">JS</div>
+        <div class="proj-num">// PROJECT_02</div>
+        <div class="proj-title">kalkulator</div>
+        <div class="proj-desc">A JavaScript calculator built as homework. Proof that even school assignments can become real coding practice — clean, functional, and submitted on time.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">JavaScript</span>
+          <span class="proj-tag">Homework</span>
+          <span class="proj-tag">Calculator</span>
+        </div>
+        <a href="https://github.com/SION1256/kalkulator" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">MIT</div>
+        <div class="proj-num">// PROJECT_03</div>
+        <div class="proj-title">kalkulator-mit</div>
+        <div class="proj-desc">MIT App Inventor AIA files — a calculator built with MIT's visual programming platform. Exploring mobile app development without writing a single line of Java.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">MIT App Inventor</span>
+          <span class="proj-tag">AIA</span>
+          <span class="proj-tag">Mobile</span>
+        </div>
+        <a href="https://github.com/SION1256/kalkulator-mit" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">HTML</div>
+        <div class="proj-num">// PROJECT_04</div>
+        <div class="proj-title">testing</div>
+        <div class="proj-desc">A free-to-use HTML testing sandbox. Where ideas get thrown at the wall to see what sticks — experiments, snippets, and whatever SION felt like trying.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">HTML</span>
+          <span class="proj-tag">Sandbox</span>
+          <span class="proj-tag">Free to Use</span>
+        </div>
+        <a href="https://github.com/SION1256/testing" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status wip">HTML</div>
+        <div class="proj-num">// PROJECT_05</div>
+        <div class="proj-title">what-</div>
+        <div class="proj-desc">A collection of HTML pages built for learning and testing — dossiers, trackers, dream pages, lore, and more. SION's most experimental playground to date.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">HTML</span>
+          <span class="proj-tag">Experimental</span>
+          <span class="proj-tag">Learning</span>
+        </div>
+        <a href="https://github.com/SION1256/what-" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <a href="https://github.com/SION1256" target="_blank" class="btn btn-gold" style="display:inline-block;text-decoration:none">🐙 VIEW ALL ON GITHUB →</a>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: CONTACT ══════════ -->
+<div class="page" id="page-contact">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// OPEN_CHANNEL</div>
+      <div class="sec-title">Contact</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="contact-wrap fade-in">
+      <div class="contact-info-block">
+        <div class="contact-item">
+          <div class="ci-icon">📍</div>
+          <div>
+            <div class="ci-label">LOCATION</div>
+            <div class="ci-val">Jakarta, Indonesia</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon">🏫</div>
+          <div>
+            <div class="ci-label">SCHOOL</div>
+            <div class="ci-val">SMAN 8 Jakarta</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#ff2244"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+          <div>
+            <div class="ci-label">EMAIL</div>
+            <div class="ci-val"><a href="mailto:gamegpt757@gmail.com">gamegpt757@gmail.com</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="url(#igGrad)"><defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#f09433"/><stop offset="25%" style="stop-color:#e6683c"/><stop offset="50%" style="stop-color:#dc2743"/><stop offset="75%" style="stop-color:#cc2366"/><stop offset="100%" style="stop-color:#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></div>
+          <div>
+            <div class="ci-label">INSTAGRAM</div>
+            <div class="ci-val"><a href="https://instagram.com/rezalasoma" target="_blank">@rezalasoma</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#f0d8dc"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></div>
+          <div>
+            <div class="ci-label">GITHUB</div>
+            <div class="ci-val"><a href="https://github.com/SION1256" target="_blank">github.com/SION1256</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
+          <div>
+            <div class="ci-label">WHATSAPP</div>
+            <div class="ci-val"><a href="https://wa.me/6281272008442" target="_blank">+62 812-7200-8442</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-msg">
+        <div class="contact-msg-title">// SEND_MESSAGE</div>
+        <div class="c-field">
+          <label>NAME</label>
+          <input type="text" placeholder="Your name...">
+        </div>
+        <div class="c-field">
+          <label>EMAIL</label>
+          <input type="email" placeholder="your@email.com">
+        </div>
+        <div class="c-field">
+          <label>MESSAGE</label>
+          <textarea placeholder="What's on your mind..."></textarea>
+        </div>
+        <button class="btn-send">[ TRANSMIT MESSAGE ]</button>
+      </div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<script type="module">
+/* ═══════════════════════════════════
+   BOOT SEQUENCE
+═══════════════════════════════════ */
+(function(){
+  const LINES = [
+    {text:'Kernel v5.0.0-SION loading...',       tag:'ok',  delay:0},
+    {text:'Mounting identity matrix...',           tag:'ok',  delay:180},
+    {text:'Initializing red-gold renderer...',     tag:'ok',  delay:360},
+    {text:'Scanning SMAN 8 credentials...',        tag:'ok',  delay:540},
+    {text:'Loading particle engine...',            tag:'ok',  delay:720},
+    {text:'WARNING: Sleep module not found',       tag:'warn',delay:900},
+    {text:'Override: caffeine protocol active',    tag:'ok',  delay:1080,hl:true},
+    {text:'Establishing secure link...',           tag:'ok',  delay:1260},
+    {text:'All systems go. Welcome, SION.',        tag:'ok',  delay:1440,hl:true},
+  ];
+  const STATUSES=['LOADING...','IDENTITY...','RENDERER...','SCANNING...','PARTICLES...','WARNING!','OVERRIDE...','LINKING...','ONLINE'];
+
+  const boot=document.getElementById('boot');
+  const log=document.getElementById('boot-log');
+  const fill=document.getElementById('boot-fill');
+  const pct=document.getElementById('boot-pct');
+  const status=document.getElementById('boot-status');
+
+  if(sessionStorage.getItem('sion_boot2')){boot.style.display='none';return;}
+
+  LINES.forEach((l,i)=>{
+    const row=document.createElement('div');
+    row.className='bl'+(l.hl?' hl':'');
+    const badge=l.tag==='warn'
+      ?`<span class="bl-warn">[ WARN ]</span>`
+      :`<span class="bl-ok">[  OK  ]</span>`;
+    row.innerHTML=`${badge}<span class="bl-text${l.hl?' hl':''}">${l.text}</span>`;
+    log.appendChild(row);
+  });
+
+  LINES.forEach((l,i)=>{
+    setTimeout(()=>{
+      log.querySelectorAll('.bl')[i].classList.add('show');
+      log.scrollTop=log.scrollHeight;
+      const p=Math.round(((i+1)/LINES.length)*100);
+      fill.style.width=p+'%';
+      pct.textContent=p+'%';
+      status.textContent=STATUSES[i]||'READY';
+    },900+l.delay);
+  });
+
+  const total=900+LINES[LINES.length-1].delay+800;
+  setTimeout(()=>{
+    status.textContent='// SION.EXE — READY';
+    setTimeout(()=>dismiss(),600);
+  },total);
+
+  function dismiss(){
+    boot.classList.add('fade-out');
+    setTimeout(()=>{boot.style.display='none';sessionStorage.setItem('sion_boot2','1');},800);
+  }
+  boot.addEventListener('click',dismiss);
+  document.addEventListener('keydown',function sk(e){dismiss();document.removeEventListener('keydown',sk);});
+})();
+
+/* ═══════════════════════════════════
+   PARTICLE CANVAS
+═══════════════════════════════════ */
+(function(){
+  const c=document.getElementById('canvas-bg');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  resize();window.addEventListener('resize',()=>{resize();init();});
+
+  function rand(a,b){return a+Math.random()*(b-a);}
+
+  function init(){
+    pts=[];
+    const n=Math.min(Math.floor(W*H/14000),90);
+    for(let i=0;i<n;i++){
+      pts.push({
+        x:rand(0,W),y:rand(0,H),
+        vx:rand(-.3,.3),vy:rand(-.3,.3),
+        r:rand(1,2.2),
+        col:Math.random()>.5?'rgba(255,34,68,':'rgba(255,215,0,'
+      });
+    }
+  }
+  init();
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Grid lines
+    ctx.strokeStyle='rgba(255,34,68,0.04)';
+    ctx.lineWidth=1;
+    for(let x=0;x<W;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+
+      // connections
+      pts.forEach(q=>{
+        const dx=p.x-q.x,dy=p.y-q.y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){
+          ctx.strokeStyle=p.col+(0.12*(1-d/120))+')';
+          ctx.lineWidth=.6;
+          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();
+        }
+      });
+
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.col+'0.7)';ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ═══════════════════════════════════
+   PAGE ROUTING
+═══════════════════════════════════ */
+window.goPage=function(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+  document.querySelectorAll('.drawer-btn').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+  const pg=document.getElementById('page-'+id);
+  if(pg){
+    if(id==='skills'){
+      setTimeout(()=>{
+        document.querySelectorAll('.skill-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});
+      },200);
+    }
+    pg.classList.add('active');
+    pg.scrollTop=0;
+  }
+}
+
+/* ═══════════════════════════════════
+   HAMBURGER / DRAWER
+═══════════════════════════════════ */
+window.toggleDrawer=function(){
+  const d=document.getElementById('drawer');
+  const h=document.getElementById('hamburger');
+  d.classList.toggle('open');
+  h.classList.toggle('open');
+}
+window.closeDrawer=function(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+/* ═══════════════════════════════════
+   TYPING ANIMATION
+═══════════════════════════════════ */
+(function(){
+  const phrases=[
+    'Student Developer',
+    'UI/UX Designer',
+    'Creative Technologist',
+    'Digital Builder',
+    'SMAN 8 Jakarta'
+  ];
+  const el=document.getElementById('typed');
+  let pi=0,ci=0,del=false;
+  function tick(){
+    const cur=phrases[pi];
+    if(!del){
+      el.textContent=cur.slice(0,++ci);
+      if(ci===cur.length){del=true;setTimeout(tick,1600);return;}
+    } else {
+      el.textContent=cur.slice(0,--ci);
+      if(ci===0){del=false;pi=(pi+1)%phrases.length;}
+    }
+    setTimeout(tick,del?50:90);
+  }
+  tick();
+})();
+
+/* ═══════════════════════════════════
+   HUD CLOCK
+═══════════════════════════════════ */
+(function(){
+  const el=document.getElementById('hud-time');
+  function tick(){
+    const d=new Date();
+    el.textContent=d.toTimeString().slice(0,8);
+  }
+  tick();setInterval(tick,1000);
+})();
+
+/* ═══════════════════════════════════
+   LOGO UPLOAD (About page)
+═══════════════════════════════════ */
+document.getElementById('logo-upload').addEventListener('change',function(){
+  const f=this.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=function(e){
+    const img=document.getElementById('logo-img');
+    const txt=document.getElementById('logo-text');
+    img.src=e.target.result;
+    img.style.display='block';
+    txt.style.display='none';
+  };
+  r.readAsDataURL(f);
+});
+
+/* ═══════════════════════════════════
+   FIREBASE + CONTACT SEND
+═══════════════════════════════════ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZQmQlTO8i4OztOSm_md31TzmkUAKUTJI",
+  authDomain: "databaserezalomba.firebaseapp.com",
+  projectId: "databaserezalomba",
+  storageBucket: "databaserezalomba.firebasestorage.app",
+  messagingSenderId: "167720662453",
+  appId: "1:167720662453:web:e7310e4c2a70df505815fc",
+  measurementId: "G-WSJ14N02XQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+async function handleSend(){
+  const name=document.querySelector('.c-field input[type="text"]').value.trim();
+  const email=document.querySelector('.c-field input[type="email"]').value.trim();
+  const msg=document.querySelector('.c-field textarea').value.trim();
+  const btn=document.querySelector('.btn-send');
+  if(!name||!email||!msg){alert('Please fill in all fields!');return;}
+  btn.textContent='[ TRANSMITTING... ]';
+  btn.disabled=true;
+  try{
+    const docRef=await addDoc(collection(db,'messages'),{
+      name,email,message:msg,
+      timestamp:serverTimestamp()
+    });
+    console.log('Message sent! ID:',docRef.id);
+    btn.textContent='[ ✓ SENDED! ]';
+    btn.style.color='var(--gold)';
+    btn.style.borderColor='var(--gold)';
+    btn.style.boxShadow='0 0 20px var(--gold-glow)';
+    document.querySelector('.c-field input[type="text"]').value='';
+    document.querySelector('.c-field input[type="email"]').value='';
+    document.querySelector('.c-field textarea').value='';
+    setTimeout(()=>{
+      btn.textContent='[ TRANSMIT MESSAGE ]';
+      btn.style.color='';btn.style.borderColor='';
+      btn.style.boxShadow='';btn.disabled=false;
+    },4000);
+  }catch(e){
+    console.error('Firebase error:',e);
+    alert('Error: '+e.message);
+    btn.textContent='[ FAILED — TRY AGAIN ]';
+    btn.style.color='var(--red)';
+    btn.disabled=false;
+    setTimeout(()=>{btn.textContent='[ TRANSMIT MESSAGE ]';btn.style.color='';},3000);
+  }
+}
+window.handleSend=handleSend;
+</script>
+<script>
+// bridge for onclick — module loads async so we queue it
+document.querySelector('.btn-send').addEventListener('click',function(){
+  if(typeof window.handleSend==='function') window.handleSend();
+  else setTimeout(()=>window.handleSend&&window.handleSend(),500);
+});
+</script>
+</body>
+</html>
