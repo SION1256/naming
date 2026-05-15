@@ -6,9 +6,9 @@
 <title>SION — Reza Aditya Lasoma</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* ═══════════════════════════════════
@@ -1489,8 +1489,50 @@ nav{
   function renderContent(text){
     // Use marked for markdown if available
     if(typeof marked!=='undefined'){
-      const html=marked.parse(text,{breaks:true,gfm:true});
-      return html;
+      // Configure marked options for better output
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: false,
+        mangle: false
+      });
+      
+      // Extract math blocks before markdown processing to prevent escaping
+      const mathBlocks = [];
+      let processedText = text;
+      
+      // Extract display math $$...$$
+      processedText = processedText.replace(/\$\$([\s\S]*?)\$\$/g, (match, p1) => {
+        const idx = mathBlocks.length;
+        mathBlocks.push({ type: 'display', content: p1 });
+        return `__MATH_BLOCK_${idx}__`;
+      });
+      
+      // Extract inline math $...$ (but not inside code blocks)
+      processedText = processedText.replace(/(?<!`)`[^`]*`(?!)|(\$(?!\$)(.+?)\$)/g, (match, p1, p2) => {
+        if (p1 && !match.startsWith('`')) {
+          const idx = mathBlocks.length;
+          mathBlocks.push({ type: 'inline', content: p2 });
+          return `__MATH_INLINE_${idx}__`;
+        }
+        return match;
+      });
+      
+      const html = marked.parse(processedText);
+      
+      // Restore math blocks
+      let result = html;
+      mathBlocks.forEach((block, idx) => {
+        const placeholderDisplay = `__MATH_BLOCK_${idx}__`;
+        const placeholderInline = `__MATH_INLINE_${idx}__`;
+        if (block.type === 'display') {
+          result = result.replace(placeholderDisplay, `$$${block.content}$$`);
+        } else {
+          result = result.replace(placeholderInline, `$${block.content}$`);
+        }
+      });
+      
+      return result;
     }
     // Fallback: basic bold/italic
     return text
@@ -1511,15 +1553,22 @@ nav{
     if(role==='bot'){
       bubble.innerHTML=renderContent(text);
       // Render KaTeX after inserting HTML
-      if(typeof renderMathInElement!=='undefined'){
-        renderMathInElement(bubble,{
-          delimiters:[
-            {left:'$$',right:'$$',display:true},
-            {left:'$',right:'$',display:false},
-            {left:'\\[',right:'\\]',display:true},
-            {left:'\\(',right:'\\)',display:false}
-          ],throwOnError:false
-        });
+      if(typeof katex!=='undefined' && typeof renderMathInElement!=='undefined'){
+        try {
+          renderMathInElement(bubble,{
+            delimiters:[
+              {left:'$$',right:'$$',display:true},
+              {left:'$',right:'$',display:false},
+              {left:'\\[',right:'\\]',display:true},
+              {left:'\\(',right:'\\)',display:false}
+            ],
+            throwOnError: false,
+            output: 'html',
+            trust: true
+          });
+        } catch(e) {
+          console.warn('KaTeX rendering error:', e);
+        }
       }
     } else {
       bubble.textContent=text;
