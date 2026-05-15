@@ -141,8 +141,18 @@ nav{
 #page-skills.neural-active .skills-grid{
   animation:skillCardLoad .6s ease backwards
 }
+#page-skills.neural-active .skill-card{
+  opacity:0;animation:skillCardIn .6s ease forwards
+}
+#page-skills.neural-active .skill-card:nth-child(1){animation-delay:.1s}
+#page-skills.neural-active .skill-card:nth-child(2){animation-delay:.2s}
+#page-skills.neural-active .skill-card:nth-child(3){animation-delay:.3s}
 @keyframes skillCardLoad{
   from{opacity:0;transform:translateY(20px) scale(.95)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes skillCardIn{
+  from{opacity:0;transform:translateY(25px) scale(.92)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
 
@@ -159,6 +169,11 @@ nav{
 #page-projects.holo-load .proj-card{
   opacity:0;animation:projCardIn .7s ease forwards
 }
+#page-projects.holo-load .proj-card:nth-child(1){animation-delay:.1s}
+#page-projects.holo-load .proj-card:nth-child(2){animation-delay:.2s}
+#page-projects.holo-load .proj-card:nth-child(3){animation-delay:.3s}
+#page-projects.holo-load .proj-card:nth-child(4){animation-delay:.4s}
+#page-projects.holo-load .proj-card:nth-child(5){animation-delay:.5s}
 @keyframes projCardIn{
   from{opacity:0;transform:translateY(30px) scale(.9);clip-path:polygon(50% 0%,50% 0%,50% 50%,50% 50%)}
   to{opacity:1;transform:translateY(0) scale(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
@@ -176,9 +191,12 @@ nav{
 /* Contact: Quantum Transmission Portal */
 #page-contact{transition:opacity .5s ease,transform .5s ease}
 #page-contact.quantum-open .contact-wrap,
-#page-contact.quantum-open .contact-info-block{
+#page-contact.quantum-open .contact-info-block,
+#page-contact.quantum-open .contact-msg{
   opacity:0;animation:quantumMaterialize .8s ease forwards
 }
+#page-contact.quantum-open .contact-info-block{animation-delay:.1s}
+#page-contact.quantum-open .contact-msg{animation-delay:.2s}
 @keyframes quantumMaterialize{
   0%{opacity:0;transform:translateZ(-100px) rotateX(10deg)}
   50%{opacity:.7}
@@ -501,6 +519,13 @@ nav{
   background:linear-gradient(90deg,var(--red),var(--gold));
   box-shadow:0 0 8px var(--red-glow);
   transition:width 1.2s cubic-bezier(.4,0,.2,1)
+}
+#page-skills.neural-active .skill-fill{
+  animation:skillBarFill 1.2s cubic-bezier(.4,0,.2,1) forwards
+}
+@keyframes skillBarFill{
+  from{width:0%}
+  to{width:var(--target-width, 0%)}
 }
 
 .tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.75rem;margin-top:1.5rem}
@@ -1045,6 +1070,9 @@ nav{
 .pers-val{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--gold);letter-spacing:1px}
 .pers-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
 .pers-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--gold));box-shadow:0 0 8px var(--red-glow);transition:width 1.4s cubic-bezier(.4,0,.2,1);width:0%}
+#page-skills.neural-active .pers-fill{
+  animation:skillBarFill 1.4s cubic-bezier(.4,0,.2,1) forwards
+}
 
 .values-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1.5rem}
 .value-card{
@@ -1943,7 +1971,7 @@ nav{
       <div class="deco-label">TECH_CORE_SPHERE</div>
     </div>
 
-    <div class="skills-grid fade-in">
+    <div class="skills-grid">
       <div class="skill-card">
         <div class="skill-card-title">// FRONTEND</div>
         <div class="skill-item">
@@ -2083,7 +2111,7 @@ nav{
       <div class="deco-label">DATA_TUNNEL_VISUALIZER</div>
     </div>
 
-    <div class="projects-grid fade-in">
+    <div class="projects-grid">
 
       <div class="proj-card">
         <div class="proj-status">PUBLIC</div>
@@ -2217,7 +2245,7 @@ nav{
       <div class="deco-label">EARTH_TRACKER_JKT — 6.2°S 106.8°E</div>
     </div>
 
-    <div class="contact-wrap fade-in">
+    <div class="contact-wrap">
       <div class="contact-info-block">
         <div class="contact-item">
           <div class="ci-icon">📍</div>
@@ -2877,24 +2905,25 @@ window.goPage=function(id){
     pg.classList.add('active'); 
     pg.scrollTop=0; 
     
+    // Reset all transition classes first
+    pg.classList.remove('neural-active','holo-load','quantum-open');
+    
+    // Force reflow to restart animations
+    void pg.offsetWidth;
+    
     // Trigger page-specific transitions
     if(id==='skills'){
       pg.classList.add('neural-active');
-      setTimeout(()=>{document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
-    } else {
-      pg.classList.remove('neural-active');
+      // Skill bars fill automatically via CSS animation triggered by neural-active class
+      setTimeout(()=>{document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},400);
     }
     
     if(id==='projects'){
       pg.classList.add('holo-load');
-    } else {
-      pg.classList.remove('holo-load');
     }
     
     if(id==='contact'){
       pg.classList.add('quantum-open');
-    } else {
-      pg.classList.remove('quantum-open');
     }
   }
 
