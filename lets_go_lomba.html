@@ -1939,9 +1939,8 @@ nav{
   }
 
   function initScenes(){
-    if(initialized) return;
-    initialized = true;
-
+    // Remove initialized flag to allow re-initialization when switching pages
+    
     // ── SCENE A: HOLOGRAM ──────────────────
     const cvA = document.getElementById('about-hologram-canvas');
     if(cvA){
