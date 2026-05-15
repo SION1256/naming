@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SION — Reza Aditya Lasoma</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ═══════════════════════════════════
+   ROOT & RESET
+═══════════════════════════════════ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#ff2244;
+  --red-dim:#cc1133;
+  --red-glow:rgba(255,34,68,0.35);
+  --gold:#ffd700;
+  --gold-dim:#cc9900;
+  --gold-glow:rgba(255,215,0,0.3);
+  --bg:#050205;
+  --bg2:#0a0408;
+  --bg3:#110608;
+  --text:#f0d8dc;
+  --dim:#7a4450;
+  --card:rgba(20,5,8,0.85);
+  --border:rgba(255,34,68,0.18);
+  --border-gold:rgba(255,215,0,0.2);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;cursor:default}
+
+
+
+/* ═══════════════════════════════════
+   CANVAS
+═══════════════════════════════════ */
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+
+
+
+/* ═══════════════════════════════════
+   NAV
+═══════════════════════════════════ */
+nav{
+  position:fixed;top:0;width:100%;z-index:500;height:56px;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 1.5rem;
+  background:rgba(5,2,5,0.96);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border)
+}
+.nav-logo{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:1rem;
+  color:var(--red);text-shadow:0 0 18px var(--red);letter-spacing:5px;cursor:pointer;
+  flex-shrink:0;user-select:none
+}
+.nav-logo span{color:var(--gold);text-shadow:0 0 12px var(--gold)}
+.nav-links{display:none;gap:0;list-style:none;align-items:center}
+.nav-btn{
+  background:transparent;border:none;cursor:pointer;
+  color:var(--dim);font-family:'Share Tech Mono',monospace;
+  font-size:.7rem;letter-spacing:2px;text-transform:uppercase;
+  padding:.4rem .9rem;transition:all .25s;white-space:nowrap
+}
+.nav-btn:hover,.nav-btn.active{
+  color:var(--gold);text-shadow:0 0 8px var(--gold);
+  background:rgba(255,215,0,0.05)
+}
+.nav-btn.active{border-bottom:1px solid var(--gold)}
+
+/* HAMBURGER */
+.hamburger{
+  display:flex;flex-direction:column;gap:5px;
+  cursor:pointer;padding:8px;background:none;border:none;z-index:600
+}
+.hamburger span{
+  width:22px;height:2px;background:var(--red);display:block;
+  transition:all .3s;box-shadow:0 0 6px var(--red)
+}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* DRAWER */
+.drawer{
+  display:none;position:fixed;top:56px;left:0;width:100%;
+  background:rgba(5,2,5,0.99);z-index:490;
+  border-bottom:1px solid var(--border);
+  flex-direction:column;max-height:calc(100dvh - 56px);
+  overflow-y:auto;scrollbar-width:none
+}
+.drawer.open{display:flex}
+.drawer-btn{
+  background:transparent;border:none;border-bottom:1px solid rgba(255,34,68,0.06);
+  color:var(--dim);font-family:'Share Tech Mono',monospace;
+  font-size:.85rem;letter-spacing:2px;padding:1rem 1.5rem;
+  cursor:pointer;text-align:left;transition:all .2s
+}
+.drawer-btn:hover,.drawer-btn.active{
+  color:var(--gold);background:rgba(255,215,0,0.04)
+}
+
+/* ═══════════════════════════════════
+   PAGES
+═══════════════════════════════════ */
+.page{
+  position:fixed;top:56px;left:0;width:100%;
+  height:calc(100dvh - 56px);
+  overflow-y:auto;overflow-x:hidden;
+  z-index:1;opacity:0;pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;
+  transform:translateY(14px);
+  padding:2.5rem 1.5rem 5rem;
+  scrollbar-width:thin;scrollbar-color:var(--red) transparent
+}
+.page::-webkit-scrollbar{width:3px}
+.page::-webkit-scrollbar-thumb{background:var(--red)}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
+.page-inner{max-width:1000px;margin:0 auto;width:100%}
+
+/* ═══════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════ */
+#page-home{
+  display:flex!important;align-items:center;flex-direction:column;
+  justify-content:flex-start;text-align:center;
+  padding:2rem 0 4rem;gap:1.2rem;
+  overflow-y:auto
+}
+.hero-wrap{
+  position:relative;z-index:2;
+  display:inline-block;padding:2.5rem 3rem;
+  animation:heroFadeIn .6s ease both
+}
+@keyframes heroFadeIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════
+   3D HERO CANVAS
+═══════════════════════════════════ */
+#sion-3d-canvas{
+  display:block;width:100%;
+  height:clamp(160px,30vw,280px);
+  cursor:grab;
+}
+#sion-3d-canvas:active{cursor:grabbing}
+
+/* Scan sweep line */
+.hero-wrap::after{
+  content:'';position:absolute;left:0;top:0;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  opacity:0;animation:scanSweep 1s ease .5s both;pointer-events:none
+}
+@keyframes scanSweep{
+  0%{top:0;opacity:.8}
+  100%{top:100%;opacity:0}
+}
+
+.hero-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.6rem,1.6vw,.78rem);
+  color:var(--dim);letter-spacing:5px;margin:.5rem 0 .6rem;
+  text-transform:uppercase;
+  animation:fadeUp .5s ease .3s both
+}
+.glitch{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(3rem,14vw,8rem);
+  font-weight:900;color:var(--red);
+  text-shadow:0 0 40px var(--red),0 0 80px var(--red-glow);
+  position:relative;display:inline-block;letter-spacing:8px;
+  animation:fadeUp .5s ease .4s both
+}
+.glitch::before,.glitch::after{
+  content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%
+}
+.glitch::before{
+  color:var(--gold);text-shadow:-3px 0 var(--gold);
+  animation:g1 2.5s infinite;
+  clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%)
+}
+.glitch::after{
+  color:#ff6688;text-shadow:3px 0 #ff6688;
+  animation:g2 2.5s infinite .4s;
+  clip-path:polygon(0 65%,100% 65%,100% 85%,0 85%)
+}
+@keyframes g1{0%,88%,100%{transform:translate(0)}90%{transform:translate(-5px,2px)}94%{transform:translate(5px,-2px)}97%{transform:translate(-2px,0)}}
+@keyframes g2{0%,85%,100%{transform:translate(0)}87%{transform:translate(5px,-2px)}92%{transform:translate(-5px,2px)}96%{transform:translate(3px,0)}}
+
+.hero-name{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(.9rem,2.5vw,1.2rem);
+  font-weight:700;color:var(--gold);
+  text-shadow:0 0 16px var(--gold);
+  letter-spacing:3px;margin-bottom:.3rem;
+  animation:fadeUp .5s ease .55s both
+}
+.hero-status{
+  display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.55rem,1.3vw,.68rem);
+  color:var(--dim);letter-spacing:3px;
+  margin-bottom:.4rem;
+  animation:fadeUp .5s ease .6s both
+}
+.hero-status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:#22ff88;box-shadow:0 0 8px #22ff88;
+  animation:pulseDot 1.5s infinite
+}
+@keyframes pulseDot{0%,100%{opacity:1;box-shadow:0 0 6px #22ff88}50%{opacity:.4;box-shadow:0 0 2px #22ff88}}
+.hero-school{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.6rem,1.4vw,.72rem);
+  color:var(--dim);letter-spacing:2px;margin-bottom:1.6rem;
+  animation:fadeUp .5s ease .65s both
+}
+.typing-wrap{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.9rem,2.2vw,1.15rem);
+  color:var(--red);margin-bottom:2.5rem;min-height:2rem;
+  padding:.4rem 1rem;
+  border-bottom:1px solid rgba(255,34,68,0.2);
+  display:inline-block;
+  animation:fadeUp .5s ease .75s both
+}
+#typed::after{content:'█';animation:blink .7s infinite;color:var(--gold);font-size:.8em}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.hero-btns{
+  display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;
+  animation:fadeUp .5s ease .9s both
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+
+/* ═══════════════════════════════════
+   HOME — STATS BAR
+═══════════════════════════════════ */
+.home-stats{
+  display:flex;justify-content:center;
+  gap:0;flex-wrap:wrap;
+  width:calc(100% - 3rem);max-width:700px;margin:0 auto;
+  animation:fadeUp .5s ease 1.3s both;
+  border:1px solid var(--border);
+  background:rgba(10,4,8,0.7);
+  backdrop-filter:blur(8px);
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)
+}
+.stat-item{
+  flex:1;min-width:120px;
+  padding:.9rem 1rem;
+  border-right:1px solid var(--border);
+  text-align:center;position:relative;
+  transition:background .3s
+}
+.stat-item:last-child{border-right:none}
+.stat-item:hover{background:rgba(255,34,68,0.05)}
+.stat-val{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.1rem,3vw,1.6rem);
+  font-weight:900;color:var(--red);
+  text-shadow:0 0 16px var(--red-glow);
+  line-height:1;margin-bottom:.3rem;
+  transition:color .3s
+}
+.stat-val.loaded{color:var(--gold);text-shadow:0 0 16px var(--gold-glow)}
+.stat-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.55rem;letter-spacing:2px;
+  color:var(--dim);text-transform:uppercase
+}
+.stat-icon{font-size:.9rem;margin-bottom:.2rem;display:block}
+
+/* ═══════════════════════════════════
+   HOME — VISUAL DEPTH (atmosphere)
+═══════════════════════════════════ */
+.home-vignette{
+  position:fixed;top:56px;left:0;width:100%;
+  height:calc(100dvh - 56px);
+  pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 80%, rgba(255,34,68,0.055) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 20%, rgba(255,215,0,0.035) 0%, transparent 65%),
+    radial-gradient(ellipse 60% 60% at 50% 50%, transparent 40%, rgba(0,0,0,0.5) 100%);
+  opacity:0;transition:opacity .8s ease
+}
+.home-vignette.visible{opacity:1}
+
+
+.btn{
+  padding:.65rem 1.6rem;border:1px solid var(--red);
+  color:var(--red);font-family:'Share Tech Mono',monospace;
+  font-size:.72rem;letter-spacing:2px;text-transform:uppercase;
+  transition:all .3s;background:transparent;cursor:pointer;
+  position:relative;overflow:hidden;display:inline-block;
+  white-space:nowrap;clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)
+}
+.btn::before{
+  content:'';position:absolute;top:0;left:-100%;
+  width:100%;height:100%;
+  background:rgba(255,34,68,0.1);transition:left .3s
+}
+.btn:hover::before{left:0}
+.btn:hover{box-shadow:0 0 20px var(--red-glow);color:var(--gold);border-color:var(--gold);text-shadow:0 0 8px var(--gold)}
+.btn-gold{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.05)}
+.btn-gold::before{background:rgba(255,215,0,0.08)}
+.btn-gold:hover{box-shadow:0 0 20px var(--gold-glow)}
+
+/* ═══════════════════════════════════
+   SECTION HEADER
+═══════════════════════════════════ */
+.sec-head{margin-bottom:2.5rem}
+.sec-tag{
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--gold);letter-spacing:4px;margin-bottom:.4rem;opacity:.7
+}
+.sec-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1rem,3vw,1.8rem);
+  font-weight:900;color:var(--red);
+  letter-spacing:4px;text-transform:uppercase;
+  text-shadow:0 0 20px var(--red-glow);margin-bottom:.6rem
+}
+.sec-line{
+  width:60px;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold),transparent)
+}
+
+/* ═══════════════════════════════════
+   ABOUT PAGE
+═══════════════════════════════════ */
+.about-top{display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:start;margin-bottom:2.5rem}
+.about-avatar-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;flex-shrink:0}
+
+/* SMAN 8 LOGO PLACEHOLDER */
+.school-logo-placeholder{
+  width:90px;height:90px;
+  border:2px dashed var(--gold);
+  border-radius:50%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  background:rgba(255,215,0,0.04);
+  cursor:pointer;transition:all .3s;
+  position:relative;overflow:hidden
+}
+.school-logo-placeholder:hover{
+  border-color:var(--red);background:rgba(255,34,68,0.06);
+  box-shadow:0 0 20px var(--red-glow)
+}
+.school-logo-placeholder img{
+  width:100%;height:100%;object-fit:cover;border-radius:50%;display:none
+}
+.logo-placeholder-text{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.55rem;color:var(--gold);letter-spacing:1px;
+  text-align:center;line-height:1.4;padding:.5rem;
+  pointer-events:none
+}
+#logo-upload{display:none}
+
+.avatar-ring{
+  width:110px;height:110px;border-radius:50%;
+  border:2px solid var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',monospace;font-size:2.2rem;font-weight:900;
+  color:var(--red);text-shadow:0 0 30px var(--red);
+  box-shadow:0 0 40px var(--red-glow);
+  animation:pulseAv 3s infinite;flex-shrink:0
+}
+@keyframes pulseAv{0%,100%{box-shadow:0 0 30px var(--red-glow)}50%{box-shadow:0 0 55px rgba(255,34,68,0.5)}}
+
+.about-text p{
+  color:var(--text);line-height:1.9;font-size:1rem;
+  margin-bottom:.9rem;opacity:.88
+}
+.about-text strong{color:var(--gold)}
+.tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.2rem}
+.tag{
+  padding:.25rem .75rem;
+  border:1px solid rgba(255,215,0,0.25);
+  color:var(--gold);font-family:'Share Tech Mono',monospace;
+  font-size:.68rem;letter-spacing:1px;
+  background:rgba(255,215,0,0.04)
+}
+
+.about-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-top:2rem}
+.about-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.4rem;transition:border-color .3s,box-shadow .3s
+}
+.about-card:hover{border-color:var(--red);box-shadow:0 0 16px var(--red-glow)}
+.ac-icon{font-size:2rem;margin-bottom:.6rem}
+.ac-title{
+  font-family:'Orbitron',monospace;font-size:.68rem;
+  color:var(--gold);letter-spacing:2px;margin-bottom:.5rem
+}
+.ac-text{font-size:.85rem;color:var(--dim);line-height:1.6}
+
+/* ═══════════════════════════════════
+   SKILLS PAGE
+═══════════════════════════════════ */
+.skills-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem}
+.skill-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem;transition:border-color .3s,box-shadow .3s
+}
+.skill-card:hover{border-color:var(--gold);box-shadow:0 0 16px var(--gold-glow)}
+.skill-card-title{
+  font-family:'Orbitron',monospace;font-size:.7rem;
+  color:var(--gold);letter-spacing:3px;margin-bottom:1.2rem;
+  padding-bottom:.6rem;border-bottom:1px solid rgba(255,215,0,0.1)
+}
+.skill-item{margin-bottom:1rem}
+.skill-label{
+  display:flex;justify-content:space-between;
+  margin-bottom:.4rem;font-size:.85rem;color:var(--text)
+}
+.skill-pct{color:var(--gold);font-family:'Share Tech Mono',monospace;font-size:.75rem}
+.skill-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.skill-fill{
+  height:100%;width:0%;border-radius:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold));
+  box-shadow:0 0 8px var(--red-glow);
+  transition:width 1.2s cubic-bezier(.4,0,.2,1)
+}
+
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:.75rem;margin-top:1.5rem}
+.tool-chip{
+  background:rgba(255,34,68,0.05);
+  border:1px solid var(--border);
+  padding:.6rem .4rem;text-align:center;
+  transition:all .3s;cursor:default
+}
+.tool-chip:hover{border-color:var(--gold);background:rgba(255,215,0,0.06)}
+.tool-icon{font-size:1.5rem;display:block;margin-bottom:.3rem}
+.tool-name{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.6rem;color:var(--dim);letter-spacing:1px
+}
+
+/* ═══════════════════════════════════
+   PROJECTS PAGE
+═══════════════════════════════════ */
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.proj-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem;transition:all .3s;position:relative;overflow:hidden
+}
+.proj-card::before{
+  content:'';position:absolute;top:0;left:0;
+  width:3px;height:0%;
+  background:linear-gradient(180deg,var(--red),var(--gold));
+  transition:height .4s ease
+}
+.proj-card:hover::before{height:100%}
+.proj-card:hover{border-color:rgba(255,34,68,0.35);box-shadow:0 0 24px var(--red-glow);transform:translateY(-2px)}
+.proj-num{
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--red);letter-spacing:2px;margin-bottom:.5rem;opacity:.7
+}
+.proj-title{
+  font-family:'Orbitron',monospace;font-size:.95rem;
+  font-weight:700;color:var(--gold);letter-spacing:2px;
+  margin-bottom:.75rem
+}
+.proj-desc{
+  font-size:.9rem;color:var(--dim);line-height:1.7;
+  margin-bottom:1rem
+}
+.proj-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
+.proj-tag{
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;
+  color:var(--red);border:1px solid rgba(255,34,68,0.25);
+  padding:.2rem .5rem;background:rgba(255,34,68,0.04)
+}
+.proj-link{
+  font-family:'Share Tech Mono',monospace;font-size:.68rem;
+  color:var(--gold);letter-spacing:2px;text-decoration:none;
+  border-bottom:1px solid rgba(255,215,0,0.3);
+  padding-bottom:1px;transition:all .2s
+}
+.proj-link:hover{color:var(--red);border-color:var(--red)}
+.proj-status{
+  position:absolute;top:1rem;right:1rem;
+  font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  letter-spacing:1px;padding:.2rem .5rem;
+  background:rgba(255,215,0,0.08);color:var(--gold);
+  border:1px solid rgba(255,215,0,0.2)
+}
+.proj-status.wip{
+  background:rgba(255,34,68,0.08);color:var(--red);
+  border-color:rgba(255,34,68,0.2)
+}
+
+/* ═══════════════════════════════════
+   CONTACT PAGE
+═══════════════════════════════════ */
+.contact-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2rem}
+.contact-info-block{display:flex;flex-direction:column;gap:1rem}
+.contact-item{
+  display:flex;align-items:center;gap:1rem;
+  background:var(--card);border:1px solid var(--border);
+  padding:1.2rem;transition:all .3s
+}
+.contact-item:hover{border-color:var(--gold);box-shadow:0 0 14px var(--gold-glow)}
+.ci-icon{font-size:1.4rem;flex-shrink:0}
+.ci-label{
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;
+  color:var(--dim);letter-spacing:2px;margin-bottom:.2rem
+}
+.ci-val{
+  font-size:.9rem;color:var(--text);font-weight:500;
+  word-break:break-all
+}
+.ci-val a{color:var(--gold);text-decoration:none}
+.ci-val a:hover{text-shadow:0 0 8px var(--gold)}
+
+.contact-msg{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.5rem
+}
+.contact-msg-title{
+  font-family:'Orbitron',monospace;font-size:.75rem;
+  color:var(--gold);letter-spacing:3px;margin-bottom:1.2rem
+}
+.c-field{margin-bottom:1rem}
+.c-field label{
+  display:block;font-family:'Share Tech Mono',monospace;
+  font-size:.65rem;color:var(--dim);letter-spacing:2px;
+  margin-bottom:.4rem
+}
+.c-field input,.c-field textarea{
+  width:100%;background:rgba(255,34,68,0.04);
+  border:1px solid var(--border);color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:.9rem;
+  padding:.6rem .8rem;outline:none;
+  transition:border-color .3s,box-shadow .3s;
+  resize:none
+}
+.c-field input:focus,.c-field textarea:focus{
+  border-color:var(--red);box-shadow:0 0 10px var(--red-glow)
+}
+.c-field textarea{height:100px}
+.btn-send{
+  width:100%;padding:.75rem;
+  background:rgba(255,34,68,0.08);
+  border:1px solid var(--red);color:var(--red);
+  font-family:'Share Tech Mono',monospace;font-size:.75rem;
+  letter-spacing:3px;cursor:pointer;
+  transition:all .3s;text-transform:uppercase
+}
+.btn-send:hover{
+  background:rgba(255,34,68,0.15);
+  box-shadow:0 0 20px var(--red-glow);
+  color:var(--gold);border-color:var(--gold)
+}
+
+/* ═══════════════════════════════════
+   FOOTER
+═══════════════════════════════════ */
+.page-footer{
+  text-align:center;margin-top:3rem;padding-top:1.5rem;
+  border-top:1px solid rgba(255,34,68,0.1);
+  font-family:'Share Tech Mono',monospace;font-size:.65rem;
+  color:var(--dim);letter-spacing:2px
+}
+.page-footer span{color:var(--red)}
+.page-footer strong{color:var(--gold)}
+
+/* ═══════════════════════════════════
+   HUD ELEMENTS
+═══════════════════════════════════ */
+.hud-line{
+  position:fixed;bottom:1.2rem;left:1.5rem;
+  font-family:'Share Tech Mono',monospace;font-size:.58rem;
+  color:rgba(255,34,68,0.35);letter-spacing:2px;z-index:100;
+  pointer-events:none
+}
+.hud-line span{color:rgba(255,215,0,0.4)}
+
+/* ═══════════════════════════════════
+   RESPONSIVE — TABLET (iPad)
+═══════════════════════════════════ */
+@media(min-width:600px){
+  .nav-links{display:flex}
+  .hamburger{display:none}
+  .about-top{gap:2.5rem}
+  .contact-wrap{gap:2rem}
+}
+
+/* ═══════════════════════════════════
+   RESPONSIVE — DESKTOP
+═══════════════════════════════════ */
+@media(min-width:900px){
+  .page{padding:3rem 3rem 5rem}
+  .about-top{grid-template-columns:auto 1fr}
+  .avatar-ring{width:130px;height:130px;font-size:2.8rem}
+  .school-logo-placeholder{width:100px;height:100px}
+}
+
+/* MOBILE ONLY */
+@media(max-width:599px){
+  .about-top{grid-template-columns:1fr;justify-items:center;text-align:center}
+  .about-avatar-wrap{flex-direction:row;justify-content:center}
+  .tags{justify-content:center}
+  .contact-wrap{grid-template-columns:1fr}
+  .nav-links{display:none}
+  .hamburger{display:flex}
+}
+
+/* ═══════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════ */
+.fade-in{animation:fadeIn .6s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════
+   ABOUT — TERMINAL BIO & WHY ENGLISH
+═══════════════════════════════════ */
+.terminal-bio{
+  background:rgba(0,0,0,0.55);border:1px solid rgba(255,34,68,0.25);
+  border-radius:2px;overflow:hidden;margin-top:1.5rem
+}
+.terminal-bio-bar{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.55rem 1rem;background:rgba(255,34,68,0.07);
+  border-bottom:1px solid rgba(255,34,68,0.15)
+}
+.tb-dot{width:10px;height:10px;border-radius:50%}
+.tb-dot.red{background:#ff3b30}.tb-dot.yellow{background:#ffcc00}.tb-dot.green{background:#28cd41}
+.tb-title{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:var(--dim);letter-spacing:2px;margin-left:.4rem}
+.terminal-bio-body{
+  padding:1.2rem 1.4rem;font-family:'Share Tech Mono',monospace;
+  font-size:.82rem;line-height:2;min-height:220px
+}
+.tb-line{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.1rem;opacity:0;transform:translateY(4px);transition:opacity .3s ease,transform .3s ease}
+.tb-line.visible{opacity:1;transform:translateY(0)}
+.tb-prompt{color:var(--red);flex-shrink:0}
+.tb-cmd{color:var(--gold)}
+.tb-out{color:var(--text);padding-left:1.2rem;opacity:.85}
+.tb-out.dim{color:var(--dim)}
+.tb-out strong{color:var(--gold)}
+.tb-cursor{display:inline-block;width:8px;height:1em;background:var(--gold);animation:blink .7s infinite;vertical-align:middle;margin-left:2px}
+
+.why-english{
+  margin-top:1.5rem;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem
+}
+.we-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.3rem;position:relative;overflow:hidden;
+  transition:border-color .3s,box-shadow .3s
+}
+.we-card:hover{border-color:rgba(255,215,0,0.3);box-shadow:0 0 14px var(--gold-glow)}
+.we-num{
+  font-family:'Orbitron',monospace;font-size:1.8rem;font-weight:900;
+  color:rgba(255,34,68,0.12);position:absolute;top:.6rem;right:.9rem;
+  line-height:1;pointer-events:none
+}
+.we-icon{font-size:1.3rem;margin-bottom:.5rem;display:block}
+.we-title{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--gold);letter-spacing:2px;margin-bottom:.4rem}
+.we-desc{font-size:.85rem;color:var(--dim);line-height:1.65}
+
+/* ═══════════════════════════════════
+   ABOUT — PERSONALITY / VALUES / MESSAGE
+═══════════════════════════════════ */
+.personality-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:1.5rem}
+.pers-item{background:var(--card);border:1px solid var(--border);padding:1.2rem 1.4rem;transition:border-color .3s}
+.pers-item:hover{border-color:rgba(255,215,0,0.3)}
+.pers-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.pers-name{font-family:'Share Tech Mono',monospace;font-size:.68rem;letter-spacing:2px;color:var(--text)}
+.pers-val{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--gold);letter-spacing:1px}
+.pers-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.pers-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--gold));box-shadow:0 0 8px var(--red-glow);transition:width 1.4s cubic-bezier(.4,0,.2,1);width:0%}
+
+.values-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1.5rem}
+.value-card{
+  background:var(--card);border:1px solid var(--border);
+  padding:1.3rem;position:relative;overflow:hidden;
+  transition:border-color .3s,box-shadow .3s
+}
+.value-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:0%;
+  background:linear-gradient(180deg,var(--gold),var(--red));
+  transition:height .4s ease
+}
+.value-card:hover::before{height:100%}
+.value-card:hover{border-color:rgba(255,215,0,0.3);box-shadow:0 0 16px var(--gold-glow)}
+.value-icon{font-size:1.4rem;margin-bottom:.6rem;display:block}
+.value-title{font-family:'Orbitron',monospace;font-size:.68rem;color:var(--gold);letter-spacing:2px;margin-bottom:.4rem}
+.value-desc{font-size:.85rem;color:var(--dim);line-height:1.6}
+
+
+/* ═══════════════════════════════════
+   LIKES TABLE
+═══════════════════════════════════ */
+.likes-table-wrap{margin-top:2.5rem;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--red) transparent}
+.likes-table-wrap::-webkit-scrollbar{height:3px}
+.likes-table-wrap::-webkit-scrollbar-thumb{background:var(--red)}
+.likes-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace}
+.likes-table thead tr{background:rgba(255,34,68,0.08);border-bottom:1px solid var(--red)}
+.likes-table th{padding:.7rem 1rem;font-size:.65rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;text-align:left;white-space:nowrap;font-weight:400;border-right:1px solid rgba(255,34,68,0.2)}
+.likes-table td{padding:.65rem 1rem;font-size:.82rem;color:var(--text);border-bottom:1px solid rgba(255,34,68,0.08);border-right:1px solid rgba(255,34,68,0.1);vertical-align:middle;line-height:1.5}
+.likes-table tbody tr{transition:background .2s}
+.likes-table tbody tr:hover{background:rgba(255,215,0,0.04)}
+.likes-table tbody tr:last-child td{border-bottom:none}
+.lt-cat{font-size:.6rem;letter-spacing:2px;color:var(--dim);white-space:nowrap}
+.lt-badge{display:inline-block;padding:.15rem .5rem;border:1px solid rgba(255,34,68,0.25);color:var(--red);font-size:.6rem;letter-spacing:1px;background:rgba(255,34,68,0.05)}
+.lt-badge.gold{border-color:rgba(255,215,0,0.25);color:var(--gold);background:rgba(255,215,0,0.05)}
+.lt-note{font-size:.75rem;color:var(--dim);display:block;margin-top:.2rem}
+
+/* ═══════════════════════════════════
+   AI CHATBOT BUBBLE
+═══════════════════════════════════ */
+#ai-bubble{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:.75rem}
+#ai-toggle{width:54px;height:54px;border-radius:50%;border:2px solid var(--red);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px var(--red-glow),0 0 6px var(--red-glow);transition:all .3s;flex-shrink:0;position:relative}
+#ai-toggle:hover{border-color:var(--gold);box-shadow:0 0 28px var(--gold-glow),0 0 8px var(--gold-glow);transform:scale(1.08)}
+#ai-toggle svg{width:24px;height:24px;fill:var(--red);transition:fill .3s}
+#ai-toggle:hover svg{fill:var(--gold)}
+#ai-toggle .pulse-ring{position:absolute;inset:-5px;border-radius:50%;border:1px solid var(--red);opacity:0;animation:aiPulse 2.5s infinite}
+@keyframes aiPulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.45);opacity:0}}
+#ai-panel{width:min(340px,90vw);background:rgba(5,2,5,0.97);border:1px solid var(--border);backdrop-filter:blur(20px);display:none;flex-direction:column;box-shadow:0 0 40px rgba(255,34,68,0.12);max-height:min(520px,70dvh);clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+#ai-panel.open{display:flex;animation:panelSlide .25s ease}
+@keyframes panelSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+#ai-panel-head{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.ai-head-left{display:flex;align-items:center;gap:.6rem}
+.ai-head-dot{width:7px;height:7px;border-radius:50%;background:#22ff88;box-shadow:0 0 8px #22ff88;animation:pulseDot 1.5s infinite;flex-shrink:0}
+.ai-head-title{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--red);letter-spacing:3px;text-shadow:0 0 8px var(--red)}
+.ai-head-sub{font-family:'Share Tech Mono',monospace;font-size:.55rem;color:var(--dim);letter-spacing:1px}
+#ai-close{background:none;border:none;color:var(--dim);cursor:pointer;font-size:1rem;line-height:1;transition:color .2s;padding:.2rem}
+#ai-close:hover{color:var(--red)}
+#ai-messages{flex:1;overflow-y:auto;padding:.9rem 1rem;display:flex;flex-direction:column;gap:.7rem;scrollbar-width:thin;scrollbar-color:var(--red) transparent}
+#ai-messages::-webkit-scrollbar{width:2px}
+#ai-messages::-webkit-scrollbar-thumb{background:var(--red)}
+.ai-msg{max-width:85%;display:flex;flex-direction:column;gap:.2rem}
+.ai-msg.user{align-self:flex-end;align-items:flex-end}
+.ai-msg.bot{align-self:flex-start;align-items:flex-start}
+.ai-msg-bubble{padding:.5rem .8rem;font-family:'Rajdhani',sans-serif;font-size:.9rem;line-height:1.55}
+.ai-msg.user .ai-msg-bubble{background:rgba(255,34,68,0.12);border:1px solid rgba(255,34,68,0.3);color:var(--text);clip-path:polygon(6px 0,100% 0,100% 100%,0 100%,0 6px)}
+.ai-msg.bot .ai-msg-bubble{background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.18);color:var(--text);clip-path:polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,0 100%)}
+.ai-msg-label{font-family:'Share Tech Mono',monospace;font-size:.52rem;color:var(--dim);letter-spacing:1px}
+.ai-typing{display:flex;gap:.3rem;align-items:center;padding:.5rem .8rem}
+.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:typingDot 1.2s infinite;opacity:.4}
+.ai-typing span:nth-child(2){animation-delay:.2s}
+.ai-typing span:nth-child(3){animation-delay:.4s}
+@keyframes typingDot{0%,100%{opacity:.4;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+#ai-input-row{padding:.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:.6rem;align-items:flex-end;flex-shrink:0}
+#ai-input{flex:1;background:rgba(255,34,68,0.04);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:.55rem .75rem;resize:none;outline:none;max-height:80px;line-height:1.4;transition:border-color .25s;scrollbar-width:none}
+#ai-input:focus{border-color:rgba(255,215,0,0.35)}
+#ai-input::placeholder{color:var(--dim);opacity:.6}
+#ai-send{background:transparent;border:1px solid var(--red);color:var(--red);font-family:'Share Tech Mono',monospace;font-size:.65rem;letter-spacing:1px;padding:.55rem .75rem;cursor:pointer;transition:all .25s;white-space:nowrap;clip-path:polygon(4px 0,100% 0,100% calc(100% - 4px),calc(100% - 4px) 100%,0 100%,0 4px)}
+#ai-send:hover:not(:disabled){border-color:var(--gold);color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
+#ai-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* AI chatbot markdown rendering */
+.ai-msg-bubble p{margin:.3rem 0}
+.ai-msg-bubble p:first-child{margin-top:0}
+.ai-msg-bubble p:last-child{margin-bottom:0}
+.ai-msg-bubble strong{color:var(--gold);font-weight:700}
+.ai-msg-bubble em{color:#ffaacc;font-style:italic}
+.ai-msg-bubble code{
+  font-family:'Share Tech Mono',monospace;font-size:.78rem;
+  background:rgba(255,34,68,0.12);border:1px solid rgba(255,34,68,0.2);
+  padding:.1rem .35rem;border-radius:2px;color:var(--red)
+}
+.ai-msg-bubble pre{
+  background:rgba(0,0,0,0.4);border:1px solid rgba(255,215,0,0.15);
+  padding:.6rem .8rem;margin:.4rem 0;overflow-x:auto;
+  scrollbar-width:thin;scrollbar-color:var(--red) transparent
+}
+.ai-msg-bubble pre code{
+  background:none;border:none;padding:0;color:var(--gold);font-size:.76rem
+}
+.ai-msg-bubble ul,.ai-msg-bubble ol{padding-left:1.2rem;margin:.3rem 0}
+.ai-msg-bubble li{margin:.15rem 0}
+.ai-msg-bubble h1,.ai-msg-bubble h2,.ai-msg-bubble h3{
+  font-family:'Orbitron',monospace;color:var(--red);
+  letter-spacing:2px;margin:.5rem 0 .25rem;font-size:.85rem
+}
+.ai-msg-bubble table{
+  border-collapse:collapse;width:100%;margin:.4rem 0;font-size:.8rem
+}
+.ai-msg-bubble th{
+  background:rgba(255,34,68,0.15);color:var(--gold);
+  font-family:'Share Tech Mono',monospace;font-size:.72rem;
+  letter-spacing:1px;padding:.35rem .6rem;
+  border:1px solid rgba(255,215,0,0.2);text-align:left
+}
+.ai-msg-bubble td{
+  padding:.3rem .6rem;border:1px solid rgba(255,34,68,0.15);
+  color:var(--text);vertical-align:top
+}
+.ai-msg-bubble tr:nth-child(even) td{background:rgba(255,215,0,0.03)}
+.ai-msg-bubble blockquote{
+  border-left:2px solid var(--gold);padding-left:.7rem;
+  margin:.3rem 0;color:var(--dim);font-style:italic
+}
+.ai-msg-bubble .katex{font-size:1em}
+
+
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+
+<!-- CANVAS -->
+<canvas id="canvas-bg"></canvas>
+
+<!-- HUD -->
+<div class="hud-line">SYS:<span>ONLINE</span> &nbsp;|&nbsp; USER:<span>SION</span> &nbsp;|&nbsp; <span id="hud-time"></span></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goPage('home')">S<span>I</span>ON</div>
+  <ul class="nav-links" id="nav-links">
+    <li><button class="nav-btn active" onclick="goPage('home')">Home</button></li>
+    <li><button class="nav-btn" onclick="goPage('about')">About</button></li>
+    <li><button class="nav-btn" onclick="goPage('skills')">Skills</button></li>
+    <li><button class="nav-btn" onclick="goPage('projects')">Projects</button></li>
+    <li><button class="nav-btn" onclick="goPage('contact')">Contact</button></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- MOBILE DRAWER -->
+<div class="drawer" id="drawer">
+  <button class="drawer-btn active" onclick="goPage('home');closeDrawer()">// HOME</button>
+  <button class="drawer-btn" onclick="goPage('about');closeDrawer()">// ABOUT</button>
+  <button class="drawer-btn" onclick="goPage('skills');closeDrawer()">// SKILLS</button>
+  <button class="drawer-btn" onclick="goPage('projects');closeDrawer()">// PROJECTS</button>
+  <button class="drawer-btn" onclick="goPage('contact');closeDrawer()">// CONTACT</button>
+</div>
+
+<!-- ══════════ PAGE: HOME ══════════ -->
+<!-- Visual depth atmosphere layers -->
+<div class="home-vignette" id="home-vignette"></div>
+
+<div class="page active" id="page-home">
+  <div class="hero-wrap" style="position:relative;display:inline-block;padding:2rem 3rem">
+    <div class="hero-label">// IDENTITY VERIFIED //</div>
+    <canvas id="sion-3d-canvas"></canvas>
+    <div class="hero-name">REZA ADITYA LASOMA</div>
+    <div class="hero-school">📍 SMAN 8 JAKARTA &nbsp;·&nbsp; CLASS OF 2026</div>
+    <div class="typing-wrap"><span id="typed"></span></div>
+    <div class="hero-btns">
+      <button class="btn btn-gold" onclick="goPage('projects')">View Projects</button>
+      <button class="btn" onclick="goPage('contact')">Contact Me</button>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="home-stats" id="home-stats">
+    <div class="stat-item">
+      <span class="stat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#f0d8dc"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></span>
+      <div class="stat-val" id="stat-repos">—</div>
+      <div class="stat-label">GitHub Repos</div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">📅</span>
+      <div class="stat-val" id="stat-days">75</div>
+      <div class="stat-label">Days Coding</div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">🚀</span>
+      <div class="stat-val" id="stat-projects">5</div>
+      <div class="stat-label">Projects Shipped</div>
+    </div>
+    <div class="stat-item">
+      <span class="stat-icon">☕</span>
+      <div class="stat-val">∞</div>
+      <div class="stat-label">Coffee Consumed</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ PAGE: ABOUT ══════════ -->
+<div class="page" id="page-about">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// PROFILE_SCAN</div>
+      <div class="sec-title">About Me</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="about-top fade-in">
+      <div class="about-avatar-wrap">
+        <div class="avatar-ring">RA</div>
+
+        <!-- SMAN 8 LOGO PLACEHOLDER — replace src="" with your logo path -->
+        <label for="logo-upload" title="Click to upload SMAN 8 logo">
+          <div class="school-logo-placeholder" id="logo-placeholder">
+            <img id="logo-img" src="" alt="SMAN 8 Logo">
+            <div class="logo-placeholder-text" id="logo-text">
+              🏫<br>SMAN 8<br>LOGO<br><span style="color:var(--red);font-size:.5rem">[ CLICK TO UPLOAD ]</span>
+            </div>
+          </div>
+        </label>
+        <input type="file" id="logo-upload" accept="image/*">
+      </div>
+
+      <div class="about-text">
+        <p>Hey — I'm <strong>Reza Aditya Lasoma</strong>, known online as <strong>SION</strong>. I'm a student at <strong>SMAN 8 Jakarta</strong> with a deep passion for technology, design, and building things that live on the internet.</p>
+        <p>I explore the intersection of <strong>code, creativity, and digital experience</strong> — from crafting slick UIs to diving into web development, graphic design, and whatever new tech catches my attention.</p>
+        <p>Always learning. Always building. Always pushing past the edge of what I thought I could do.</p>
+        <div class="tags">
+          <span class="tag">Web Dev</span>
+          <span class="tag">UI/UX Design</span>
+          <span class="tag">Student</span>
+          <span class="tag">Creator</span>
+          <span class="tag">SMAN 8 JKT</span>
+          <span class="tag">Tech Enthusiast</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-cards fade-in">
+      <div class="about-card">
+        <div class="ac-icon">🎓</div>
+        <div class="ac-title">Education</div>
+        <div class="ac-text">SMAN 8 Jakarta<br>Class of 2026</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">💻</div>
+        <div class="ac-title">Focus</div>
+        <div class="ac-text">Frontend Dev · UI Design · Digital Creativity</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">🎮</div>
+        <div class="ac-title">Hobbies</div>
+        <div class="ac-text">Gaming · Design · Music · Exploring New Tech</div>
+      </div>
+      <div class="about-card">
+        <div class="ac-icon">🚀</div>
+        <div class="ac-title">Mission</div>
+        <div class="ac-text">Build digital experiences that leave a lasting legacy</div>
+      </div>
+    </div>
+
+    <!-- LIKES TABLE -->
+    <div class="sec-head fade-in" style="margin-top:2.5rem">
+      <div class="sec-tag">// PERSONAL_DATA</div>
+      <div class="sec-title" style="font-size:clamp(.9rem,2.5vw,1.3rem)">What I'm Into</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="likes-table-wrap fade-in">
+      <table class="likes-table">
+        <thead>
+          <tr>
+            <th>// CATEGORY</th>
+            <th>// ITEM</th>
+            <th>// DETAILS</th>
+            <th>// LEVEL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="lt-cat">☕ COFFEE</td>
+            <td>Kopi Tubruk</td>
+            <td><span class="lt-note">Indonesian black coffee, no filter, thick as a runtime error</span></td>
+            <td><span class="lt-badge gold">DAILY</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">☕ COFFEE</td>
+            <td>Kopi Susu</td>
+            <td><span class="lt-note">Sweetened milk coffee — Janji Jiwa or Kopi Kenangan hit different</span></td>
+            <td><span class="lt-badge gold">FREQUENT</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">☕ COFFEE</td>
+            <td>Kapal Api</td>
+            <td><span class="lt-note">The classic. Grandma's house energy. Pure Indonesian legacy fuel</span></td>
+            <td><span class="lt-badge">CLASSIC</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🎵 MUSIC</td>
+            <td>Lofi Hip Hop</td>
+            <td><span class="lt-note">Non-negotiable during coding sessions. Lofi Girl radio on loop</span></td>
+            <td><span class="lt-badge gold">ALWAYS ON</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🎵 MUSIC</td>
+            <td>Indonesian Indie</td>
+            <td><span class="lt-note">Sounds familiar, hits different. Late night playlist material</span></td>
+            <td><span class="lt-badge">VIBING</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🎮 GAMING</td>
+            <td>Strategy & Open World</td>
+            <td><span class="lt-note">Games that reward thinking. The kind you forget to eat during</span></td>
+            <td><span class="lt-badge gold">ACTIVE</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🌐 TECH</td>
+            <td>Web Dev Rabbit Holes</td>
+            <td><span class="lt-note">Started googling one thing. It's 3AM now. No regrets</span></td>
+            <td><span class="lt-badge gold">CHRONIC</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🌌 SCIENCE</td>
+            <td>Space & Astronomy</td>
+            <td><span class="lt-note">Black holes, dark matter, the fact that light takes 8 mins from the sun</span></td>
+            <td><span class="lt-badge">FASCINATED</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">📚 READING</td>
+            <td>Sci-Fi & Tech Blogs</td>
+            <td><span class="lt-note">Anything about the future. How things actually work beneath the surface</span></td>
+            <td><span class="lt-badge">OCCASIONAL</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🎨 DESIGN</td>
+            <td>UI / Digital Art</td>
+            <td><span class="lt-note">Aesthetic + function. Dark interfaces, glitch effects, cyberpunk visuals</span></td>
+            <td><span class="lt-badge gold">OBSESSED</span></td>
+          </tr>
+          <tr>
+            <td class="lt-cat">🌙 HABIT</td>
+            <td>Night Owl Sessions</td>
+            <td><span class="lt-note">Peak productivity: 1AM–4AM. Best code written in complete silence + coffee</span></td>
+            <td><span class="lt-badge gold">EVERY NIGHT</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PERSONALITY STATS -->
+    <div class="sec-head fade-in" style="margin-top:2.5rem">
+      <div class="sec-tag">// PERSONALITY_SCAN</div>
+      <div class="sec-title" style="font-size:clamp(.9rem,2.5vw,1.3rem)">System Traits</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="personality-grid fade-in">
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">CURIOSITY</span><span class="pers-val">999%</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="100"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">BUILD DRIVE</span><span class="pers-val">OVERCLOCKED</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="98"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">CAFFEINE DEPENDENCY</span><span class="pers-val">CRITICAL</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="95"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">HYPERFOCUS</span><span class="pers-val">MAX</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="93"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">CREATIVE OUTPUT</span><span class="pers-val">HIGH</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="85"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">SLEEP SCHEDULE</span><span class="pers-val">DEPRECATED</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="12"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">SOCIAL BATTERY</span><span class="pers-val">LOW</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="28"></div></div>
+      </div>
+      <div class="pers-item">
+        <div class="pers-label"><span class="pers-name">PATIENCE (BUGS)</span><span class="pers-val">DEGRADING</span></div>
+        <div class="pers-bar"><div class="pers-fill" data-w="40"></div></div>
+      </div>
+    </div>
+
+    <!-- CORE VALUES -->
+    <div class="sec-head fade-in" style="margin-top:2.5rem">
+      <div class="sec-tag">// CORE_VALUES</div>
+      <div class="sec-title" style="font-size:clamp(.9rem,2.5vw,1.3rem)">What I Stand For</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="values-grid fade-in">
+      <div class="value-card">
+        <span class="value-icon">🔍</span>
+        <div class="value-title">CURIOSITY FIRST</div>
+        <div class="value-desc">Never stop asking "what if?" and "how does this actually work?" The best ideas start with a question at 2AM.</div>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">🔨</span>
+        <div class="value-title">BUILD & LEARN</div>
+        <div class="value-desc">Every project is a classroom. Ship the ugly version first, improve until it's something worth showing. Failure is just data.</div>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">⚡</span>
+        <div class="value-title">QUALITY OVER SPEED</div>
+        <div class="value-desc">Clean code outlives quick fixes. Technical debt is real debt. I'd rather ship late and solid than fast and broken.</div>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">📡</span>
+        <div class="value-title">SHARE KNOWLEDGE</div>
+        <div class="value-desc">The internet gave me everything for free. Open source, open mind. Help others climb the same ladder you used.</div>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">🌱</span>
+        <div class="value-title">STAY HUMBLE</div>
+        <div class="value-desc">There's always more to learn. The best developers are eternal students. Ego is a bug, not a feature.</div>
+      </div>
+      <div class="value-card">
+        <span class="value-icon">🌙</span>
+        <div class="value-title">EMBRACE THE NIGHT</div>
+        <div class="value-desc">Some of the best things get built between midnight and 4AM. That's not a bad habit — that's when the world gets quiet enough to think.</div>
+      </div>
+    </div>
+
+    <!-- TERMINAL BIO -->
+    <div class="sec-head fade-in" style="margin-top:2.5rem">
+      <div class="sec-tag">// IDENTITY_QUERY</div>
+      <div class="sec-title" style="font-size:clamp(.9rem,2.5vw,1.3rem)">Who Is SION</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="terminal-bio fade-in" id="terminal-bio">
+      <div class="terminal-bio-bar">
+        <div class="tb-dot red"></div>
+        <div class="tb-dot yellow"></div>
+        <div class="tb-dot green"></div>
+        <span class="tb-title">sion@portfolio:~$</span>
+      </div>
+      <div class="terminal-bio-body" id="tb-body">
+        <!-- lines injected by JS -->
+      </div>
+    </div>
+
+    <!-- WHY ENGLISH -->
+    <div class="sec-head fade-in" style="margin-top:2.5rem">
+      <div class="sec-tag">// SYSTEM_LANGUAGE · OVERRIDE · EN_US</div>
+      <div class="sec-title" style="font-size:clamp(.9rem,2.5vw,1.3rem)">Why English</div>
+      <div class="sec-line"></div>
+    </div>
+    <div class="why-english fade-in">
+      <div class="we-card">
+        <span class="we-num">01</span>
+        <span class="we-icon">🧠</span>
+        <div class="we-title">LEARNING BY DOING</div>
+        <div class="we-desc">This site is my English class. Every label, every message, every comment I wrote is practice. Building forced me to actually use the language — not just study it.</div>
+      </div>
+      <div class="we-card">
+        <span class="we-num">02</span>
+        <span class="we-icon">🌍</span>
+        <div class="we-title">GLOBAL REACH</div>
+        <div class="we-desc">Indonesian keeps me local. English puts me on the same page as developers everywhere. I want anyone on earth to be able to read what I built — not just people in Jakarta.</div>
+      </div>
+      <div class="we-card">
+        <span class="we-num">03</span>
+        <span class="we-icon">💻</span>
+        <div class="we-title">TECH SPEAKS ENGLISH</div>
+        <div class="we-desc">Every doc, every Stack Overflow answer, every GitHub README — it's all in English. If you build in tech, you think in English. I'm just training my brain early.</div>
+      </div>
+      <div class="we-card">
+        <span class="we-num">04</span>
+        <span class="we-icon">📡</span>
+        <div class="we-title">PROOF OF PROGRESS</div>
+        <div class="we-desc">Look at this site. Every word on it is me getting better. The first version had way more broken English. This is what consistent practice actually looks like — shipped live.</div>
+      </div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: SKILLS ══════════ -->
+<div class="page" id="page-skills">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// SYSTEM_CAPABILITIES</div>
+      <div class="sec-title">Skills</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="skills-grid fade-in">
+      <div class="skill-card">
+        <div class="skill-card-title">// FRONTEND</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>HTML & CSS</span><span class="skill-pct">90%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="90"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>JavaScript</span><span class="skill-pct">75%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="75"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Responsive Design</span><span class="skill-pct">85%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="85"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>WordPress</span><span class="skill-pct">70%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="70"></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">// DESIGN</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>UI / UX Design</span><span class="skill-pct">80%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="80"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Figma</span><span class="skill-pct">72%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="72"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Graphic Design</span><span class="skill-pct">78%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="78"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Photo Editing</span><span class="skill-pct">65%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="65"></div></div>
+        </div>
+      </div>
+
+      <div class="skill-card">
+        <div class="skill-card-title">// GENERAL</div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Problem Solving</span><span class="skill-pct">88%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="88"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Teamwork</span><span class="skill-pct">92%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="92"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Fast Learner</span><span class="skill-pct">95%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="95"></div></div>
+        </div>
+        <div class="skill-item">
+          <div class="skill-label"><span>Creativity</span><span class="skill-pct">90%</span></div>
+          <div class="skill-bar"><div class="skill-fill" data-w="90"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-head fade-in" style="margin-top:2.5rem;margin-bottom:1rem">
+      <div class="sec-tag">// TOOLS_LOADED</div>
+    </div>
+    <div class="tools-grid fade-in">
+      <div class="tool-chip"><span class="tool-icon">🌐</span><div class="tool-name">VS Code</div></div>
+      <div class="tool-chip"><span class="tool-icon">🎨</span><div class="tool-name">Figma</div></div>
+      <div class="tool-chip"><span class="tool-icon">📝</span><div class="tool-name">WordPress</div></div>
+      <div class="tool-chip"><span class="tool-icon">🖼️</span><div class="tool-name">Canva</div></div>
+      <div class="tool-chip"><span class="tool-icon">📱</span><div class="tool-name">Adobe XD</div></div>
+      <div class="tool-chip"><span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#f0d8dc"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></span><div class="tool-name">GitHub</div></div>
+      <div class="tool-chip"><span class="tool-icon">📊</span><div class="tool-name">Google Suite</div></div>
+      <div class="tool-chip"><span class="tool-icon">⚡</span><div class="tool-name">Notion</div></div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: PROJECTS ══════════ -->
+<div class="page" id="page-projects">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// PROJECT_MANIFESTS</div>
+      <div class="sec-title">Projects</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="projects-grid fade-in">
+
+      <div class="proj-card">
+        <div class="proj-status">PUBLIC</div>
+        <div class="proj-num">// PROJECT_01</div>
+        <div class="proj-title">secret-doksli</div>
+        <div class="proj-desc">A mysterious public repo — just "id". Updated just recently, suggesting something active is brewing here. Stay curious.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">Public</span>
+          <span class="proj-tag">Active</span>
+          <span class="proj-tag">Mystery</span>
+        </div>
+        <a href="https://github.com/SION1256/secret-doksli" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">JS</div>
+        <div class="proj-num">// PROJECT_02</div>
+        <div class="proj-title">kalkulator</div>
+        <div class="proj-desc">A JavaScript calculator built as homework. Proof that even school assignments can become real coding practice — clean, functional, and submitted on time.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">JavaScript</span>
+          <span class="proj-tag">Homework</span>
+          <span class="proj-tag">Calculator</span>
+        </div>
+        <a href="https://github.com/SION1256/kalkulator" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">MIT</div>
+        <div class="proj-num">// PROJECT_03</div>
+        <div class="proj-title">kalkulator-mit</div>
+        <div class="proj-desc">MIT App Inventor AIA files — a calculator built with MIT's visual programming platform. Exploring mobile app development without writing a single line of Java.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">MIT App Inventor</span>
+          <span class="proj-tag">AIA</span>
+          <span class="proj-tag">Mobile</span>
+        </div>
+        <a href="https://github.com/SION1256/kalkulator-mit" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status">HTML</div>
+        <div class="proj-num">// PROJECT_04</div>
+        <div class="proj-title">testing</div>
+        <div class="proj-desc">A free-to-use HTML testing sandbox. Where ideas get thrown at the wall to see what sticks — experiments, snippets, and whatever SION felt like trying.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">HTML</span>
+          <span class="proj-tag">Sandbox</span>
+          <span class="proj-tag">Free to Use</span>
+        </div>
+        <a href="https://github.com/SION1256/testing" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+      <div class="proj-card">
+        <div class="proj-status wip">HTML</div>
+        <div class="proj-num">// PROJECT_05</div>
+        <div class="proj-title">what-</div>
+        <div class="proj-desc">A collection of HTML pages built for learning and testing — dossiers, trackers, dream pages, lore, and more. SION's most experimental playground to date.</div>
+        <div class="proj-tags">
+          <span class="proj-tag">HTML</span>
+          <span class="proj-tag">Experimental</span>
+          <span class="proj-tag">Learning</span>
+        </div>
+        <a href="https://github.com/SION1256/what-" target="_blank" class="proj-link">VIEW ON GITHUB →</a>
+      </div>
+
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <a href="https://github.com/SION1256" target="_blank" class="btn btn-gold" style="display:inline-block;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg> VIEW ALL ON GITHUB →</a>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+
+<!-- ══════════ PAGE: CONTACT ══════════ -->
+<div class="page" id="page-contact">
+  <div class="page-inner">
+    <div class="sec-head fade-in">
+      <div class="sec-tag">// OPEN_CHANNEL</div>
+      <div class="sec-title">Contact</div>
+      <div class="sec-line"></div>
+    </div>
+
+    <div class="contact-wrap fade-in">
+      <div class="contact-info-block">
+        <div class="contact-item">
+          <div class="ci-icon">📍</div>
+          <div>
+            <div class="ci-label">LOCATION</div>
+            <div class="ci-val">Jakarta, Indonesia</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon">🏫</div>
+          <div>
+            <div class="ci-label">SCHOOL</div>
+            <div class="ci-val">SMAN 8 Jakarta</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#ff2244"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg></div>
+          <div>
+            <div class="ci-label">EMAIL</div>
+            <div class="ci-val"><a href="mailto:gamegpt757@gmail.com">gamegpt757@gmail.com</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="url(#igGrad)"><defs><linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#f09433"/><stop offset="25%" style="stop-color:#e6683c"/><stop offset="50%" style="stop-color:#dc2743"/><stop offset="75%" style="stop-color:#cc2366"/><stop offset="100%" style="stop-color:#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></div>
+          <div>
+            <div class="ci-label">INSTAGRAM</div>
+            <div class="ci-val"><a href="https://instagram.com/rezalasoma" target="_blank">@rezalasoma</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#f0d8dc"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></div>
+          <div>
+            <div class="ci-label">GITHUB</div>
+            <div class="ci-val"><a href="https://github.com/SION1256" target="_blank">github.com/SION1256</a></div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <div class="ci-icon"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
+          <div>
+            <div class="ci-label">WHATSAPP</div>
+            <div class="ci-val"><a href="https://wa.me/6281272008442" target="_blank">+62 812-7200-8442</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="contact-msg">
+        <div class="contact-msg-title">// SEND_MESSAGE</div>
+        <div class="c-field">
+          <label>NAME</label>
+          <input id="c-name" type="text" placeholder="Your name...">
+        </div>
+        <div class="c-field">
+          <label>EMAIL</label>
+          <input id="c-email" type="email" placeholder="your@email.com">
+        </div>
+        <div class="c-field">
+          <label>MESSAGE</label>
+          <textarea id="c-msg" placeholder="What's on your mind..."></textarea>
+        </div>
+        <button class="btn-send">[ TRANSMIT MESSAGE ]</button>
+      </div>
+    </div>
+
+    <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
+  </div>
+</div>
+<div id="ai-bubble">
+  <div id="ai-panel" role="dialog" aria-label="AI Chat">
+    <div id="ai-panel-head">
+      <div class="ai-head-left">
+        <div class="ai-head-dot"></div>
+        <div>
+          <div class="ai-head-title">SION · AI</div>
+          <div class="ai-head-sub">// NEURAL_LINK_ACTIVE</div>
+        </div>
+      </div>
+      <button id="ai-close" aria-label="Close chat">✕</button>
+    </div>
+    <div id="ai-messages">
+      <div class="ai-msg bot">
+        <div class="ai-msg-label">SION·AI</div>
+        <div class="ai-msg-bubble">Hey! I'm SION's AI assistant. Ask me anything about Reza, his projects, or just say hello.</div>
+      </div>
+    </div>
+    <div id="ai-input-row">
+      <textarea id="ai-input" rows="1" placeholder="Send a message..." aria-label="Message input"></textarea>
+      <button id="ai-send">SEND</button>
+    </div>
+  </div>
+  <button id="ai-toggle" aria-label="Open AI chat">
+    <div class="pulse-ring"></div>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.929 1.389 5.548 3.573 7.306L4.5 22l4.326-2.157A10.7 10.7 0 0012 20.486c5.523 0 10-4.145 10-9.243S17.523 2 12 2zm1 13H7v-2h6v2zm4-4H7V9h10v2z"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   AI CHATBOT — OPENROUTER
+═══════════════════════════════════ */
+(function(){
+  // ──────────────────────────────────
+  // 🔑 PUT YOUR OPENROUTER KEY HERE:
+  const OPENROUTER_API_KEY = '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';
+  // ──────────────────────────────────
+  // Model to use — free tier default
+  const MODEL = 'openrouter/free';
+
+  const SYSTEM_PROMPT = `You are SION's AI assistant on his personal portfolio site. SION is Reza Aditya Lasoma, a student developer and UI/UX designer from SMAN 8 Jakarta, Indonesia. He builds web projects, experiments with MIT App Inventor, and is passionate about creative technology. Keep answers concise, friendly, and slightly tech-flavored to match the cyberpunk aesthetic of the site.`;
+
+  const panel    = document.getElementById('ai-panel');
+  const toggle   = document.getElementById('ai-toggle');
+  const closeBtn = document.getElementById('ai-close');
+  const input    = document.getElementById('ai-input');
+  const sendBtn  = document.getElementById('ai-send');
+  const msgs     = document.getElementById('ai-messages');
+
+  const history  = []; // rolling conversation history
+
+  toggle.addEventListener('click',()=>{
+    panel.classList.toggle('open');
+    if(panel.classList.contains('open')) input.focus();
+  });
+  closeBtn.addEventListener('click',()=>panel.classList.remove('open'));
+
+  // Auto-resize textarea
+  input.addEventListener('input',()=>{
+    input.style.height='auto';
+    input.style.height=Math.min(input.scrollHeight,80)+'px';
+  });
+  input.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
+  });
+  sendBtn.addEventListener('click',sendMsg);
+
+  function renderContent(text){
+    // Use marked for markdown if available
+    if(typeof marked!=='undefined'){
+      const html=marked.parse(text,{breaks:true,gfm:true});
+      return html;
+    }
+    // Fallback: basic bold/italic
+    return text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g,'<em>$1</em>')
+      .replace(/`(.+?)`/g,'<code>$1</code>');
+  }
+
+  function appendMsg(role,text){
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg '+role;
+    const label=document.createElement('div');
+    label.className='ai-msg-label';
+    label.textContent=role==='user'?'YOU':'SION·AI';
+    const bubble=document.createElement('div');
+    bubble.className='ai-msg-bubble';
+    if(role==='bot'){
+      bubble.innerHTML=renderContent(text);
+      // Render KaTeX after inserting HTML
+      if(typeof renderMathInElement!=='undefined'){
+        renderMathInElement(bubble,{
+          delimiters:[
+            {left:'$$',right:'$$',display:true},
+            {left:'$',right:'$',display:false},
+            {left:'\\[',right:'\\]',display:true},
+            {left:'\\(',right:'\\)',display:false}
+          ],throwOnError:false
+        });
+      }
+    } else {
+      bubble.textContent=text;
+    }
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    msgs.appendChild(wrap);
+    msgs.scrollTop=msgs.scrollHeight;
+    return bubble;
+  }
+
+  function showTyping(){
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg bot';wrap.id='ai-typing-indicator';
+    const dot=document.createElement('div');dot.className='ai-typing';
+    dot.innerHTML='<span></span><span></span><span></span>';
+    wrap.appendChild(dot);msgs.appendChild(wrap);
+    msgs.scrollTop=msgs.scrollHeight;
+  }
+  function hideTyping(){
+    const t=document.getElementById('ai-typing-indicator');
+    if(t)t.remove();
+  }
+
+  async function sendMsg(){
+    const text=input.value.trim();
+    if(!text||sendBtn.disabled)return;
+    input.value='';input.style.height='auto';
+    appendMsg('user',text);
+    history.push({role:'user',content:text});
+    sendBtn.disabled=true;showTyping();
+
+    try{
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+OPENROUTER_API_KEY,
+          'HTTP-Referer':location.origin,
+          'X-Title':'SION Portfolio AI'
+        },
+        body:JSON.stringify({
+          model:MODEL,
+          messages:[
+            {role:'system',content:SYSTEM_PROMPT},
+            ...history.slice(-10) // keep last 10 turns for context
+          ]
+        })
+      });
+      const data=await res.json();
+      hideTyping();
+      const reply=data?.choices?.[0]?.message?.content||'[signal lost — try again]';
+      history.push({role:'assistant',content:reply});
+      appendMsg('bot',reply);
+    }catch(err){
+      hideTyping();
+      appendMsg('bot','[connection error: '+err.message+']');
+    }finally{
+      sendBtn.disabled=false;input.focus();
+    }
+  }
+})();
+
+/* ═══════════════════════════════════
+   3D SION TEXT — THREE.JS
+═══════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('sion-3d-canvas');
+  if(!canvas || typeof THREE === 'undefined') return;
+
+  // Scene setup
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 2, 0.1, 100);
+  camera.position.set(0, 0, 7);
+
+  // Lights
+  const ambLight = new THREE.AmbientLight(0xff2244, 0.4);
+  scene.add(ambLight);
+  const redLight = new THREE.PointLight(0xff2244, 3, 20);
+  redLight.position.set(0, 2, 4);
+  scene.add(redLight);
+  const goldLight = new THREE.PointLight(0xffd700, 2, 20);
+  goldLight.position.set(3, -1, 3);
+  scene.add(goldLight);
+  const backLight = new THREE.PointLight(0xff2244, 1.5, 20);
+  backLight.position.set(-3, 0, -2);
+  scene.add(backLight);
+
+  // Build "SION" from box shapes — each letter approximated with cubes
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const MAT_SOLID = new THREE.MeshStandardMaterial({
+    color: 0xff2244,
+    emissive: 0xff1133,
+    emissiveIntensity: 0.6,
+    metalness: 0.7,
+    roughness: 0.2
+  });
+  const MAT_WIRE = new THREE.MeshBasicMaterial({
+    color: 0xffd700,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.18
+  });
+
+  function box(w,h,d,x,y,z){
+    const geo = new THREE.BoxGeometry(w,h,d);
+    const mesh = new THREE.Mesh(geo, MAT_SOLID);
+    const wire = new THREE.Mesh(geo, MAT_WIRE);
+    mesh.position.set(x,y,z);
+    wire.position.set(x,y,z);
+    group.add(mesh);
+    group.add(wire);
+  }
+
+  const T = 0.18; // stroke thickness
+  const D = 0.45; // depth
+  const H = 1.4;  // letter height
+  const W = 0.8;  // letter width
+
+  // — S —
+  const sx = -2.85;
+  box(W,T,D, sx, H/2-T/2,0);       // top bar
+  box(T,H/2-T,D, sx-W/2+T/2, H/4,0); // top-left vert
+  box(W,T,D, sx, 0,0);             // mid bar
+  box(T,H/2-T,D, sx+W/2-T/2,-H/4,0); // bot-right vert
+  box(W,T,D, sx,-H/2+T/2,0);      // bot bar
+
+  // — I —
+  const ix = -1.05;
+  box(W,T,D, ix, H/2-T/2,0);      // top
+  box(T,H-T*2,D, ix, 0,0);        // stem
+  box(W,T,D, ix,-H/2+T/2,0);      // bot
+
+  // — O —
+  const ox = 0.75;
+  box(W,T,D, ox, H/2-T/2,0);      // top
+  box(T,H-T*2,D, ox-W/2+T/2,0,0); // left
+  box(T,H-T*2,D, ox+W/2-T/2,0,0); // right
+  box(W,T,D, ox,-H/2+T/2,0);      // bot
+
+  // — N —
+  const nx = 2.55;
+  box(T,H,D, nx-W/2+T/2,0,0);     // left vert
+  box(T,H,D, nx+W/2-T/2,0,0);     // right vert
+  // diagonal — approximate with rotated box
+  const diagGeo = new THREE.BoxGeometry(T, Math.sqrt(W*W+H*H)*0.98, D);
+  const diagMesh = new THREE.Mesh(diagGeo, MAT_SOLID);
+  const diagWire = new THREE.Mesh(diagGeo, MAT_WIRE);
+  const angle = Math.atan2(W,H);
+  diagMesh.rotation.z = -angle;
+  diagWire.rotation.z = -angle;
+  diagMesh.position.set(nx, 0, 0);
+  diagWire.position.set(nx, 0, 0);
+  group.add(diagMesh); group.add(diagWire);
+
+  // Center the group
+  group.position.set(0, 0, 0);
+
+  // Resize handler
+  function resize(){
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Mouse drag rotation
+  let isDragging = false;
+  let prevMouse = {x:0,y:0};
+  let rotVel = {x:0, y:0};
+
+  canvas.addEventListener('mousedown', e=>{isDragging=true; prevMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup', ()=>{isDragging=false;});
+  window.addEventListener('mousemove', e=>{
+    if(!isDragging) return;
+    const dx = e.clientX - prevMouse.x;
+    const dy = e.clientY - prevMouse.y;
+    rotVel.y += dx * 0.012;
+    rotVel.x += dy * 0.012;
+    prevMouse = {x:e.clientX, y:e.clientY};
+  });
+
+  // Touch support
+  canvas.addEventListener('touchstart', e=>{isDragging=true; prevMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  canvas.addEventListener('touchend', ()=>isDragging=false);
+  canvas.addEventListener('touchmove', e=>{
+    if(!isDragging) return;
+    const dx = e.touches[0].clientX - prevMouse.x;
+    const dy = e.touches[0].clientY - prevMouse.y;
+    rotVel.y += dx * 0.012;
+    rotVel.x += dy * 0.012;
+    prevMouse = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  },{passive:true});
+
+  // Animate
+  let t = 0;
+  function animate(){
+    requestAnimationFrame(animate);
+    t += 0.012;
+
+    // Auto slow rotation + bobbing
+    if(!isDragging){
+      rotVel.y += (0.008 - rotVel.y) * 0.04;
+      rotVel.x += (0 - rotVel.x) * 0.04;
+    }
+    group.rotation.y += rotVel.y;
+    group.rotation.x += rotVel.x;
+    rotVel.y *= 0.92;
+    rotVel.x *= 0.92;
+
+    // Gentle float
+    group.position.y = Math.sin(t * 0.7) * 0.08;
+
+    // Pulse emissive
+    MAT_SOLID.emissiveIntensity = 0.5 + Math.sin(t*1.8) * 0.2;
+    redLight.intensity = 3 + Math.sin(t*2.1) * 0.8;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* ═══════════════════════════════════
+   HOME — STATS & VIGNETTE
+═══════════════════════════════════ */
+(function(){
+  // Vignette on load (home is active by default)
+  const vignette = document.getElementById('home-vignette');
+  if(vignette) vignette.classList.add('visible');
+
+  // Days coding — started March 1 2026 (site v1.0)
+  const startDate = new Date('2026-03-01');
+  const today = new Date('2026-05-15');
+  const days = Math.floor((today - startDate) / 86400000);
+  const daysEl = document.getElementById('stat-days');
+  if(daysEl){ daysEl.textContent = days; daysEl.classList.add('loaded'); }
+
+  // GitHub repos — live from API
+  fetch('https://api.github.com/users/SION1256')
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('stat-repos');
+      if(el && data.public_repos !== undefined){
+        el.textContent = data.public_repos;
+        el.classList.add('loaded');
+      }
+    })
+    .catch(() => {
+      const el = document.getElementById('stat-repos');
+      if(el) el.textContent = '6';
+    });
+})();
+
+/* ═══════════════════════════════════
+   PARTICLE CANVAS
+═══════════════════════════════════ */
+(function(){
+  const c=document.getElementById('canvas-bg');
+  const ctx=c.getContext('2d');
+  let W,H,pts=[];
+
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;}
+  resize();window.addEventListener('resize',()=>{resize();init();});
+
+  function rand(a,b){return a+Math.random()*(b-a);}
+
+  function init(){
+    pts=[];
+    const n=Math.min(Math.floor(W*H/14000),90);
+    for(let i=0;i<n;i++){
+      pts.push({
+        x:rand(0,W),y:rand(0,H),
+        vx:rand(-.3,.3),vy:rand(-.3,.3),
+        r:rand(1,2.2),
+        col:Math.random()>.5?'rgba(255,34,68,':'rgba(255,215,0,'
+      });
+    }
+  }
+  init();
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // Grid lines
+    ctx.strokeStyle='rgba(255,34,68,0.04)';
+    ctx.lineWidth=1;
+    for(let x=0;x<W;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;
+      if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+
+      // connections
+      pts.forEach(q=>{
+        const dx=p.x-q.x,dy=p.y-q.y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){
+          ctx.strokeStyle=p.col+(0.12*(1-d/120))+')';
+          ctx.lineWidth=.6;
+          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();
+        }
+      });
+
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=p.col+'0.7)';ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+
+/* ═══════════════════════════════════
+   PAGE ROUTING — single source of truth
+
+   All side-effects live here; no patches.
+═══════════════════════════════════ */
+window.goPage=function(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+  document.querySelectorAll('.drawer-btn').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('onclick').includes("'"+id+"'"));
+  });
+  const pg=document.getElementById('page-'+id);
+  if(pg){ pg.classList.add('active'); pg.scrollTop=0; }
+
+  if(id==='about'){
+    setTimeout(()=>{document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
+    setTimeout(window._runTerminal||function(){},400);
+  }
+  if(id==='skills'){
+    setTimeout(()=>{document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
+  }
+
+  const vignette=document.getElementById('home-vignette');
+  if(vignette) vignette.classList.toggle('visible', id==='home');
+};
+
+/* ═══════════════════════════════════
+   HAMBURGER / DRAWER
+═══════════════════════════════════ */
+window.toggleDrawer=function(){
+  const d=document.getElementById('drawer');
+  const h=document.getElementById('hamburger');
+  d.classList.toggle('open');
+  h.classList.toggle('open');
+};
+window.closeDrawer=function(){
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+};
+
+/* ═══════════════════════════════════
+   TYPING ANIMATION
+═══════════════════════════════════ */
+(function(){
+  const phrases=[
+    'Student Developer',
+    'UI/UX Designer',
+    'Creative Technologist',
+    'Digital Builder',
+    'SMAN 8 Jakarta'
+  ];
+  const el=document.getElementById('typed');
+  let pi=0,ci=0,del=false;
+  function tick(){
+    const cur=phrases[pi];
+    if(!del){
+      el.textContent=cur.slice(0,++ci);
+      if(ci===cur.length){del=true;setTimeout(tick,1600);return;}
+    } else {
+      el.textContent=cur.slice(0,--ci);
+      if(ci===0){del=false;pi=(pi+1)%phrases.length;}
+    }
+    setTimeout(tick,del?50:90);
+  }
+  tick();
+})();
+
+/* ═══════════════════════════════════
+   HUD CLOCK
+═══════════════════════════════════ */
+(function(){
+  const el=document.getElementById('hud-time');
+  function tick(){
+    const d=new Date();
+    el.textContent=d.toTimeString().slice(0,8);
+  }
+  tick();setInterval(tick,1000);
+})();
+
+/* ═══════════════════════════════════
+   LOGO UPLOAD (About page)
+═══════════════════════════════════ */
+document.getElementById('logo-upload').addEventListener('change',function(){
+  const f=this.files[0];
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=function(e){
+    const img=document.getElementById('logo-img');
+    const txt=document.getElementById('logo-text');
+    img.src=e.target.result;
+    img.style.display='block';
+    txt.style.display='none';
+  };
+  r.readAsDataURL(f);
+});
+
+
+/* ═══════════════════════════════════
+   TERMINAL BIO ANIMATION
+═══════════════════════════════════ */
+(function(){
+  const lines = [
+    {type:'cmd', text:'whoami'},
+    {type:'out', text:'<strong>Reza Aditya Lasoma</strong> · alias: <strong>SION</strong>'},
+    {type:'cmd', text:'cat bio.txt'},
+    {type:'out', text:'Student at SMAN 8 Jakarta · Class of 2026'},
+    {type:'out', text:'UI/UX Designer · Web Developer · Digital Builder'},
+    {type:'out', text:'Born curious. Raised by the internet. Currently compiling.'},
+    {type:'cmd', text:'ls interests/'},
+    {type:'out', text:'coffee/  music/  gaming/  design/  space/  coding/  night-owl/'},
+    {type:'cmd', text:'cat status.log'},
+    {type:'out', text:'[ACTIVE] Building things that live on the internet'},
+    {type:'out', text:'[ACTIVE] Learning React · Node.js · how to sleep before 2AM'},
+    {type:'out', text:'[WARNING] Sleep schedule deprecated. No fix planned.'},
+    {type:'cmd', text:'echo $LOCATION'},
+    {type:'out', text:'Jakarta, Indonesia · online everywhere else'},
+    {type:'cmd', text:'cat mission.txt'},
+    {type:'out', text:'Build digital experiences that leave a lasting mark.'},
+    {type:'out', text:'Ship. Learn. Repeat. Never stop.'},
+    {type:'cursor'},
+  ];
+
+  function runTerminal(){
+    const body = document.getElementById('tb-body');
+    if(!body) return;
+    body.innerHTML = '';
+    let delay = 0;
+    lines.forEach((line, i) => {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'tb-line';
+        if(line.type === 'cmd'){
+          el.innerHTML = '<span class="tb-prompt">sion@portfolio:~$</span><span class="tb-cmd"> ' + line.text + '</span>';
+        } else if(line.type === 'out'){
+          el.innerHTML = '<span class="tb-out">' + line.text + '</span>';
+        } else if(line.type === 'cursor'){
+          el.innerHTML = '<span class="tb-prompt">sion@portfolio:~$</span><span class="tb-cursor"></span>';
+        }
+        body.appendChild(el);
+        requestAnimationFrame(() => { el.classList.add('visible'); });
+        body.scrollTop = body.scrollHeight;
+      }, delay);
+      delay += line.type === 'cmd' ? 320 : 120;
+    });
+  }
+
+  // Register so goPage can call it
+  window._runTerminal = runTerminal;
+})();
+
+/* ═══════════════════════════════════
+   LOGO UPLOAD end — close regular script
+═══════════════════════════════════ */
+</script>
+
+<script type="module">
+/* ═══════════════════════════════════
+   FIREBASE + CONTACT SEND
+═══════════════════════════════════ */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZQmQlTO8i4OztOSm_md31TzmkUAKUTJI",
+  authDomain: "databaserezalomba.firebaseapp.com",
+  databaseURL: "https://databaserezalomba-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "databaserezalomba",
+  storageBucket: "databaserezalomba.firebasestorage.app",
+  messagingSenderId: "167720662453",
+  appId: "1:167720662453:web:e7310e4c2a70df505815fc",
+  measurementId: "G-WSJ14N02XQ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+async function handleSend(){
+  const nameEl=document.getElementById('c-name');
+  const emailEl=document.getElementById('c-email');
+  const msgEl=document.getElementById('c-msg');
+  const btn=document.querySelector('.btn-send');
+  const name=nameEl.value.trim();
+  const email=emailEl.value.trim();
+  const msg=msgEl.value.trim();
+  if(!name||!email||!msg){alert('Please fill in all fields!');return;}
+  btn.textContent='[ TRANSMITTING... ]';
+  btn.disabled=true;
+  try{
+    const messagesRef=ref(db,'messages');
+    const newRef=await push(messagesRef,{
+      name,email,message:msg,
+      timestamp:serverTimestamp()
+    });
+    console.log('Message sent! ID:',newRef.key);
+    btn.textContent='[ ✓ SENT! ]';
+    btn.style.color='var(--gold)';
+    btn.style.borderColor='var(--gold)';
+    btn.style.boxShadow='0 0 20px var(--gold-glow)';
+    nameEl.value='';emailEl.value='';msgEl.value='';
+    setTimeout(()=>{
+      btn.textContent='[ TRANSMIT MESSAGE ]';
+      btn.style.color='';btn.style.borderColor='';
+      btn.style.boxShadow='';btn.disabled=false;
+    },4000);
+  }catch(e){
+    console.error('Firebase error:',e);
+    alert('Error: '+e.message);
+    btn.textContent='[ FAILED — TRY AGAIN ]';
+    btn.style.color='var(--red)';
+    btn.disabled=false;
+    setTimeout(()=>{btn.textContent='[ TRANSMIT MESSAGE ]';btn.style.color='';},3000);
+  }
+}
+
+// Event listener inside module — no race condition
+document.querySelector('.btn-send').addEventListener('click', handleSend);
+</script>
+</body>
+</html>
