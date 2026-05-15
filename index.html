@@ -124,6 +124,79 @@ nav{
 .page-inner{max-width:1000px;margin:0 auto;width:100%}
 
 /* ═══════════════════════════════════
+   PAGE TRANSITIONS
+═══════════════════════════════════ */
+/* Skills: Neural Network Activation */
+#page-skills{transition:opacity .5s ease,transform .5s ease}
+#page-skills .neural-node{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle,var(--gold) 0%,transparent 70%);
+  opacity:0;animation:neuralActivate .8s ease forwards
+}
+@keyframes neuralActivate{
+  0%{transform:scale(0);opacity:0}
+  50%{opacity:1;box-shadow:0 0 20px var(--gold-glow)}
+  100%{transform:scale(1);opacity:.6}
+}
+#page-skills.neural-active .skills-grid{
+  animation:skillCardLoad .6s ease backwards
+}
+@keyframes skillCardLoad{
+  from{opacity:0;transform:translateY(20px) scale(.95)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Projects: Holographic Data Load */
+#page-projects{transition:opacity .5s ease,transform .5s ease}
+#page-projects.holo-load .projects-grid{
+  animation:holoMaterialize .7s ease forwards
+}
+@keyframes holoMaterialize{
+  0%{opacity:0;filter:hue-rotate(90deg) brightness(2)}
+  40%{opacity:.8}
+  100%{opacity:1;filter:hue-rotate(0) brightness(1)}
+}
+#page-projects.holo-load .proj-card{
+  opacity:0;animation:projCardIn .7s ease forwards
+}
+@keyframes projCardIn{
+  from{opacity:0;transform:translateY(30px) scale(.9);clip-path:polygon(50% 0%,50% 0%,50% 50%,50% 50%)}
+  to{opacity:1;transform:translateY(0) scale(1);clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+}
+#page-projects.holo-load::before{
+  content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,215,0,.03) 2px,rgba(255,215,0,.03) 4px);
+  pointer-events:none;animation:holoScan .6s ease forwards;z-index:999
+}
+@keyframes holoScan{
+  from{transform:translateY(-100%)}
+  to{transform:translateY(100%)}
+}
+
+/* Contact: Quantum Transmission Portal */
+#page-contact{transition:opacity .5s ease,transform .5s ease}
+#page-contact.quantum-open .contact-wrap,
+#page-contact.quantum-open .contact-info-block{
+  opacity:0;animation:quantumMaterialize .8s ease forwards
+}
+@keyframes quantumMaterialize{
+  0%{opacity:0;transform:translateZ(-100px) rotateX(10deg)}
+  50%{opacity:.7}
+  100%{opacity:1;transform:translateZ(0) rotateX(0)}
+}
+#page-contact.quantum-open::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle,var(--red) 0%,transparent 70%);
+  box-shadow:0 0 60px 30px var(--red-glow);
+  animation:quantumExpand .6s ease forwards;pointer-events:none;z-index:998
+}
+@keyframes quantumExpand{
+  from{transform:translate(-50%,-50%) scale(1);opacity:1}
+  to{transform:translate(-50%,-50%) scale(50);opacity:0}
+}
+
+/* ═══════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════ */
 #page-home{
@@ -2800,14 +2873,34 @@ window.goPage=function(id){
     b.classList.toggle('active',b.getAttribute('onclick').includes("'"+id+"'"));
   });
   const pg=document.getElementById('page-'+id);
-  if(pg){ pg.classList.add('active'); pg.scrollTop=0; }
+  if(pg){ 
+    pg.classList.add('active'); 
+    pg.scrollTop=0; 
+    
+    // Trigger page-specific transitions
+    if(id==='skills'){
+      pg.classList.add('neural-active');
+      setTimeout(()=>{document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
+    } else {
+      pg.classList.remove('neural-active');
+    }
+    
+    if(id==='projects'){
+      pg.classList.add('holo-load');
+    } else {
+      pg.classList.remove('holo-load');
+    }
+    
+    if(id==='contact'){
+      pg.classList.add('quantum-open');
+    } else {
+      pg.classList.remove('quantum-open');
+    }
+  }
 
   if(id==='about'){
     setTimeout(()=>{document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
     setTimeout(window._runTerminal||function(){},400);
-  }
-  if(id==='skills'){
-    setTimeout(()=>{document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
   }
 
   const vignette=document.getElementById('home-vignette');
@@ -3024,14 +3117,8 @@ window.initiateVaultOpen = function(){
         // After door slides, show about page
         setTimeout(()=>{
           overlay.classList.remove('active');
-          // Actually navigate
-          document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-          const pg = document.getElementById('page-about');
-          if(pg){ pg.classList.add('active'); pg.scrollTop=0; }
-          setTimeout(()=>{document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
-          setTimeout(window._runTerminal||function(){},400);
-          const vignette=document.getElementById('home-vignette');
-          if(vignette) vignette.classList.remove('visible');
+          // Actually navigate using goPage for consistency
+          window.goPage('about');
         }, 1200);
       }, 600);
       return;
