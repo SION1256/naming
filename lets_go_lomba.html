@@ -2089,21 +2089,8 @@ nav{
     tick();
   }
 
-  // ── SINGLE goPage PATCH ────────────────
-  const _origAbout = window.goPage;
-  window.goPage = function(id){
-    _origAbout(id);
-    if(id === 'about'){
-      // Give the DOM one frame to paint, then init
-      setTimeout(initScenes, 100);
-    }
-  };
-
-  // Also init if About is the starting page
-  if(document.getElementById('page-about').classList.contains('active')){
-    setTimeout(initScenes, 100);
-  }
-
+  // start the shared tick
+  tick();
 })();
 
 /* ═══════════════════════════════════
@@ -2119,7 +2106,13 @@ window.goPage=function(id){
   });
   const pg=document.getElementById('page-'+id);
   if(pg){
-    if(id==='about'){setTimeout(()=>{document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);}
+    if(id==='about'){
+      setTimeout(()=>{
+        document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});
+        // Initialize Three.js scenes for About page
+        if(typeof initScenes === 'function') initScenes();
+      },200);
+    }
     if(id==='skills'){
       setTimeout(()=>{
         document.querySelectorAll('.skill-fill,.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});
@@ -2129,6 +2122,11 @@ window.goPage=function(id){
     pg.scrollTop=0;
   }
 };
+
+// Also init if About is the starting page
+if(document.getElementById('page-about').classList.contains('active')){
+  setTimeout(()=>{ if(typeof initScenes === 'function') initScenes(); }, 100);
+}
 
 /* ═══════════════════════════════════
    HAMBURGER / DRAWER
