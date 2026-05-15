@@ -9,6 +9,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 /* ═══════════════════════════════════
@@ -147,26 +149,7 @@ nav{
 }
 #sion-3d-canvas:active{cursor:grabbing}
 
-/* Page-specific Three.js canvases - NOW IN CONTAINERS */
-#about-3d-canvas,
-#skills-3d-canvas,
-#projects-3d-canvas{
-  display:block;width:100%;
-  height:clamp(280px,40vw,420px);
-  z-index:1;pointer-events:auto;
-  opacity:1;
-}
-#contact-3d-canvas{
-  display:block;width:100%;
-  height:clamp(320px,45vw,480px);
-  z-index:1;pointer-events:auto;
-  opacity:1;
-}
-@media(max-width:768px){
-  #contact-3d-canvas{
-    height:clamp(280px,40vw,380px);
-  }
-}
+
 
 /* Scan sweep line */
 .hero-wrap::after{
@@ -455,42 +438,304 @@ nav{
   transition:all .3s;cursor:default
 }
 .tool-chip:hover{border-color:var(--gold);background:rgba(255,215,0,0.06)}
-.tool-icon{font-size:1.5rem;display:block;margin-bottom:.3rem}
+.tool-icon{font-size:1.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:.4rem;height:32px}
 .tool-name{
   font-family:'Share Tech Mono',monospace;
   font-size:.6rem;color:var(--dim);letter-spacing:1px
 }
 
 /* ═══════════════════════════════════
-   CYBER DISPLAY PANELS (3D Containers)
+   PAGE DECO PANELS (CSS-only, replaces Three.js canvases)
 ═══════════════════════════════════ */
-.cyber-display{
+.page-deco{
   position:relative;
-  background:rgba(10,4,8,0.6);
+  background:rgba(10,4,8,0.7);
   border:1px solid var(--border);
-  border-radius:4px;
   overflow:hidden;
-  min-height:320px;
+  height:clamp(240px,35vw,360px);
+  margin-bottom:2rem;
   backdrop-filter:blur(8px);
-  box-shadow:0 0 20px rgba(0,0,0,0.5);
+  box-shadow:0 0 30px rgba(0,0,0,0.6);
 }
-.cyber-display canvas{
-  display:block;width:100%;height:100%;
-  position:absolute;top:0;left:0;
-}
-.display-overlay{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  background:radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%);
-  pointer-events:none;
-  border:1px solid rgba(255,34,68,0.08);
-}
-.display-label{
-  position:absolute;bottom:8px;left:10px;
+.deco-label{
+  position:absolute;bottom:8px;left:12px;
   font-family:'Share Tech Mono',monospace;
   font-size:.55rem;color:var(--gold);
-  letter-spacing:2px;opacity:0.7;
+  letter-spacing:2px;opacity:.7;
   text-shadow:0 0 8px var(--gold-glow);
+  pointer-events:none;z-index:10;
+}
+.deco-corner{
+  position:absolute;width:14px;height:14px;
+  border-color:var(--red);border-style:solid;
+  pointer-events:none;z-index:10;opacity:.6;
+}
+.deco-corner.tl{top:6px;left:6px;border-width:1px 0 0 1px}
+.deco-corner.tr{top:6px;right:6px;border-width:1px 1px 0 0}
+.deco-corner.bl{bottom:6px;left:6px;border-width:0 0 1px 1px}
+.deco-corner.br{bottom:6px;right:6px;border-width:0 1px 1px 0}
+
+/* ── ABOUT: scan lines + holographic grid + circuit traces ── */
+.deco-about{background:rgba(5,2,8,0.85)}
+/* Perspective grid */
+.deco-grid{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(rgba(255,34,68,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,34,68,0.06) 1px, transparent 1px);
+  background-size:40px 40px;
+  transform:perspective(400px) rotateX(45deg) scaleY(1.8) translateY(-20%);
+  transform-origin:50% 100%;
+  pointer-events:none;animation:gridScroll 5s linear infinite;
+}
+@keyframes gridScroll{0%{background-position:0 0}100%{background-position:0 40px}}
+/* Scan line sweep */
+.deco-scan{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;
+}
+.deco-scan::before{
+  content:'';position:absolute;left:0;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,215,0,.5),transparent);
+  animation:scanY 3s ease-in-out infinite;
+}
+.deco-scan::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,
+    transparent,transparent 3px,
+    rgba(0,0,0,.18) 3px,rgba(0,0,0,.18) 4px);
   pointer-events:none;
+}
+@keyframes scanY{0%{top:-2px}50%{top:101%}50.01%{top:-2px}100%{top:-2px}}
+/* Circuit traces SVG layer */
+.deco-circuit{
+  position:absolute;inset:0;pointer-events:none;
+}
+.deco-circuit svg{width:100%;height:100%}
+.circuit-path{
+  fill:none;stroke:var(--red);stroke-width:1;
+  stroke-dasharray:300;stroke-dashoffset:300;
+  animation:drawPath 4s ease forwards;opacity:.35;
+}
+.circuit-path:nth-child(2){stroke:var(--gold);animation-delay:.8s;opacity:.25}
+.circuit-path:nth-child(3){animation-delay:1.6s}
+.circuit-path:nth-child(4){stroke:var(--gold);animation-delay:2.2s;opacity:.2}
+@keyframes drawPath{to{stroke-dashoffset:0}}
+/* Center node */
+.deco-node{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:60px;height:60px;border-radius:50%;
+  border:1px solid var(--red);
+  box-shadow:0 0 20px var(--red-glow),inset 0 0 20px rgba(255,34,68,.1);
+  animation:nodeGlow 2.5s ease-in-out infinite;pointer-events:none;
+}
+.deco-node::before{
+  content:'';position:absolute;inset:8px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,34,68,.4) 0%,transparent 70%);
+  animation:nodeGlow 2.5s ease-in-out infinite reverse;
+}
+@keyframes nodeGlow{0%,100%{box-shadow:0 0 16px var(--red-glow)}50%{box-shadow:0 0 32px rgba(255,34,68,.6),0 0 60px rgba(255,34,68,.2)}}
+/* Orbital rings around node */
+.deco-orbit{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  border-radius:50%;border:1px solid;pointer-events:none;
+}
+.deco-orbit:nth-child(1){width:100px;height:100px;border-color:rgba(255,34,68,.2);animation:spinOrbit 8s linear infinite}
+.deco-orbit:nth-child(2){width:150px;height:150px;border-color:rgba(255,215,0,.12);animation:spinOrbit 12s linear infinite reverse}
+.deco-orbit:nth-child(3){width:200px;height:200px;border-color:rgba(255,34,68,.08);animation:spinOrbit 18s linear infinite}
+@keyframes spinOrbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
+/* Orbit dots */
+.orbit-dot{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  top:-2.5px;left:50%;margin-left:-2.5px;
+}
+.deco-orbit:nth-child(1) .orbit-dot{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+.deco-orbit:nth-child(2) .orbit-dot{background:var(--red);box-shadow:0 0 8px var(--red)}
+.deco-orbit:nth-child(3) .orbit-dot{background:var(--gold);box-shadow:0 0 6px var(--gold)}
+
+/* ── SKILLS: concentric rings + glitch core + noise ── */
+.deco-skills{background:rgba(5,2,8,.9)}
+.deco-rings{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;pointer-events:none;
+}
+.ring{
+  position:absolute;border-radius:50%;border:1px solid;
+}
+.ring:nth-child(1){width:60px;height:60px;border-color:rgba(255,34,68,.9);box-shadow:0 0 12px var(--red-glow);animation:ringPulse 2s ease-in-out infinite}
+.ring:nth-child(2){width:100px;height:100px;border-color:rgba(255,34,68,.5);animation:ringPulse 2s ease-in-out .3s infinite}
+.ring:nth-child(3){width:150px;height:150px;border-color:rgba(255,215,0,.3);animation:spinRing 6s linear infinite}
+.ring:nth-child(4){width:200px;height:200px;border-color:rgba(255,34,68,.2);animation:spinRing 10s linear infinite reverse}
+.ring:nth-child(5){width:260px;height:260px;border-color:rgba(255,215,0,.12);animation:spinRing 15s linear infinite}
+.ring:nth-child(6){width:330px;height:330px;border-color:rgba(255,34,68,.07);animation:spinRing 22s linear infinite reverse}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.6}}
+@keyframes spinRing{to{transform:rotate(360deg)}}
+.ring-tick{
+  position:absolute;top:-3px;left:50%;margin-left:-1px;
+  width:2px;height:6px;
+}
+.ring:nth-child(3) .ring-tick{background:var(--gold)}
+.ring:nth-child(4) .ring-tick{background:var(--red)}
+.ring:nth-child(5) .ring-tick{background:var(--gold)}
+.deco-core{
+  position:absolute;width:40px;height:40px;
+  border-radius:50%;
+  background:radial-gradient(circle,var(--red) 0%,rgba(255,34,68,.3) 60%,transparent 100%);
+  animation:coreGlitch 3s ease-in-out infinite;
+  box-shadow:0 0 20px var(--red);
+}
+@keyframes coreGlitch{
+  0%,90%,100%{transform:translate(0,0);filter:none}
+  91%{transform:translate(-3px,1px);filter:hue-rotate(90deg)}
+  93%{transform:translate(3px,-1px);filter:hue-rotate(-90deg)}
+  95%{transform:translate(-1px,2px);filter:none}
+  97%{transform:translate(2px,-1px);filter:hue-rotate(45deg)}
+}
+/* Orbiting octahedron dots */
+.skill-orbiter{
+  position:absolute;width:8px;height:8px;
+  border-radius:2px;transform-origin:0 0;pointer-events:none;
+}
+.skill-orbiter:nth-child(1){background:var(--gold);box-shadow:0 0 8px var(--gold);animation:orbit1 4s linear infinite}
+.skill-orbiter:nth-child(2){background:var(--red);box-shadow:0 0 6px var(--red);animation:orbit1 6s linear infinite reverse;animation-delay:-2s}
+.skill-orbiter:nth-child(3){background:var(--gold);box-shadow:0 0 5px var(--gold);animation:orbit2 8s linear infinite;animation-delay:-3s}
+@keyframes orbit1{from{transform:rotate(0deg) translateX(90px) rotate(0deg)}to{transform:rotate(360deg) translateX(90px) rotate(-360deg)}}
+@keyframes orbit2{from{transform:rotate(0deg) translateX(130px) rotate(0deg)}to{transform:rotate(360deg) translateX(130px) rotate(-360deg)}}
+/* Noise grain */
+.deco-noise{
+  position:absolute;inset:0;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  animation:noiseShift 1s steps(2) infinite;
+}
+@keyframes noiseShift{0%{background-position:0 0}50%{background-position:50px 30px}100%{background-position:0 0}}
+
+/* ── PROJECTS: CSS perspective tunnel ── */
+.deco-projects{background:rgba(3,1,5,.95);perspective:400px}
+.deco-tunnel{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;
+  overflow:hidden;
+}
+.tunnel-grid{
+  position:absolute;width:100%;height:100%;
+  transform-style:preserve-3d;
+}
+/* Floor grid */
+.t-floor{
+  position:absolute;bottom:0;left:0;width:100%;height:60%;
+  background:
+    linear-gradient(rgba(255,34,68,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,34,68,.12) 1px, transparent 1px);
+  background-size:10% 10%;
+  transform:perspective(400px) rotateX(70deg);
+  transform-origin:50% 100%;
+  animation:tunnelScroll 1.5s linear infinite;
+}
+/* Ceiling grid */
+.t-ceil{
+  position:absolute;top:0;left:0;width:100%;height:60%;
+  background:
+    linear-gradient(rgba(255,215,0,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,215,0,.07) 1px, transparent 1px);
+  background-size:10% 10%;
+  transform:perspective(400px) rotateX(-70deg);
+  transform-origin:50% 0%;
+  animation:tunnelScroll 1.5s linear infinite;
+}
+@keyframes tunnelScroll{from{background-position:0 0}to{background-position:0 10%}}
+/* Vanishing point glow */
+.t-vp{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:6px;height:6px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 30px 15px rgba(255,215,0,.15),0 0 60px 30px rgba(255,34,68,.08);
+  animation:vpPulse 2s ease-in-out infinite;
+}
+@keyframes vpPulse{0%,100%{box-shadow:0 0 30px 15px rgba(255,215,0,.15),0 0 60px 30px rgba(255,34,68,.08)}50%{box-shadow:0 0 50px 25px rgba(255,215,0,.25),0 0 90px 45px rgba(255,34,68,.15)}}
+/* Horizon lines */
+.t-horizon{
+  position:absolute;top:50%;left:0;width:100%;
+  border-top:1px solid rgba(255,34,68,.3);
+  box-shadow:0 0 10px rgba(255,34,68,.2);
+}
+/* Data cubes flying toward camera */
+.t-cube{
+  position:absolute;border:1px solid;
+  animation:cubefly linear infinite;
+  pointer-events:none;
+}
+.t-cube:nth-child(1){width:12px;height:12px;border-color:rgba(255,34,68,.6);top:40%;left:48%;animation-duration:2.2s;animation-delay:0s}
+.t-cube:nth-child(2){width:8px;height:8px;border-color:rgba(255,215,0,.5);top:52%;left:44%;animation-duration:1.8s;animation-delay:.4s}
+.t-cube:nth-child(3){width:10px;height:10px;border-color:rgba(255,34,68,.4);top:46%;left:54%;animation-duration:2.6s;animation-delay:.9s}
+.t-cube:nth-child(4){width:6px;height:6px;border-color:rgba(255,215,0,.6);top:48%;left:50%;animation-duration:1.5s;animation-delay:1.3s}
+.t-cube:nth-child(5){width:14px;height:14px;border-color:rgba(255,34,68,.3);top:43%;left:46%;animation-duration:3s;animation-delay:1.8s}
+.t-cube:nth-child(6){width:9px;height:9px;border-color:rgba(255,215,0,.4);top:55%;left:52%;animation-duration:2s;animation-delay:.2s}
+@keyframes cubefly{
+  0%{transform:scale(0.1) translateZ(0);opacity:0}
+  20%{opacity:1}
+  80%{opacity:.8}
+  100%{transform:scale(4) translateZ(0);opacity:0}
+}
+/* Side walls */
+.t-wall-l,.t-wall-r{
+  position:absolute;top:0;height:100%;width:1px;
+  background:linear-gradient(180deg,transparent,rgba(255,34,68,.3),transparent);
+}
+.t-wall-l{left:10%}
+.t-wall-r{right:10%}
+
+/* ── CONTACT: SVG globe + scan + rings ── */
+.deco-contact{background:rgba(3,1,8,.9)}
+.deco-globe-wrap{
+  position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.deco-globe{
+  position:relative;width:200px;height:200px;
+}
+.globe-svg{
+  width:100%;height:100%;
+  animation:globeSpin 20s linear infinite;
+  opacity:.7;
+}
+@keyframes globeSpin{to{transform:rotate(360deg)}}
+/* Jakarta marker */
+.jakarta-marker{
+  position:absolute;
+  /* Jakarta is roughly SE on the globe — position accordingly */
+  top:58%;left:70%;
+  transform:translate(-50%,-50%);
+}
+.jkt-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--gold);box-shadow:0 0 12px var(--gold);
+  animation:jktPulse 1.5s ease-in-out infinite;
+}
+.jkt-ring{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:20px;height:20px;border-radius:50%;
+  border:1px solid var(--red);
+  animation:jktRing 1.5s ease-out infinite;opacity:0;
+}
+@keyframes jktPulse{0%,100%{box-shadow:0 0 8px var(--gold)}50%{box-shadow:0 0 20px var(--gold),0 0 40px rgba(255,215,0,.3)}}
+@keyframes jktRing{0%{transform:translate(-50%,-50%) scale(0.5);opacity:.8}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}
+/* Globe outer glow rings */
+.globe-ring-outer{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  border-radius:50%;border:1px solid;pointer-events:none;
+}
+.globe-ring-outer:nth-child(1){width:220px;height:220px;border-color:rgba(255,34,68,.15);animation:spinOrbit 15s linear infinite}
+.globe-ring-outer:nth-child(2){width:260px;height:260px;border-color:rgba(255,215,0,.08);animation:spinOrbit 25s linear infinite reverse}
+/* Globe stars */
+.globe-star{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:#fff;opacity:.4;pointer-events:none;
+}
+/* Scanline on contact */
+.deco-contact .deco-scan::before{
+  background:linear-gradient(90deg,transparent,rgba(255,34,68,.4),transparent);
 }
 
 /* ═══════════════════════════════════
@@ -767,14 +1012,14 @@ nav{
 /* ═══════════════════════════════════
    AI CHATBOT BUBBLE
 ═══════════════════════════════════ */
-#ai-bubble{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:.75rem}
+#ai-bubble{position:fixed;bottom:1.5rem;right:1rem;z-index:9000;display:flex;flex-direction:column;align-items:flex-end;gap:.75rem}
 #ai-toggle{width:54px;height:54px;border-radius:50%;border:2px solid var(--red);background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px var(--red-glow),0 0 6px var(--red-glow);transition:all .3s;flex-shrink:0;position:relative}
 #ai-toggle:hover{border-color:var(--gold);box-shadow:0 0 28px var(--gold-glow),0 0 8px var(--gold-glow);transform:scale(1.08)}
 #ai-toggle svg{width:24px;height:24px;fill:var(--red);transition:fill .3s}
 #ai-toggle:hover svg{fill:var(--gold)}
 #ai-toggle .pulse-ring{position:absolute;inset:-5px;border-radius:50%;border:1px solid var(--red);opacity:0;animation:aiPulse 2.5s infinite}
 @keyframes aiPulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.45);opacity:0}}
-#ai-panel{width:clamp(380px,48vw,560px);height:clamp(480px,60vh,680px);background:rgba(5,2,5,0.97);border:1px solid var(--border);backdrop-filter:blur(20px);display:none;flex-direction:column;box-shadow:0 0 40px rgba(255,34,68,0.12);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+#ai-panel{width:min(420px,calc(100vw - 2rem));height:min(520px,calc(100dvh - 100px));background:rgba(5,2,5,0.97);border:1px solid var(--border);backdrop-filter:blur(20px);display:none;flex-direction:column;box-shadow:0 0 40px rgba(255,34,68,0.12);clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
 #ai-panel.open{display:flex;animation:panelSlide .25s ease}
 @keyframes panelSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 #ai-panel-head{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
@@ -798,6 +1043,34 @@ nav{
 .ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:typingDot 1.2s infinite;opacity:.4}
 .ai-typing span:nth-child(2){animation-delay:.2s}
 .ai-typing span:nth-child(3){animation-delay:.4s}
+.ai-msg.bot .ai-msg-bubble .katex{color:var(--gold);font-size:1em}
+.ai-msg.bot .ai-msg-bubble .katex-display{overflow-x:auto;overflow-y:hidden;padding:.4rem 0;margin:.4rem 0}
+.ai-msg.bot .ai-msg-bubble .katex-display>.katex{color:var(--red)}
+/* Code blocks */
+.ai-msg-bubble pre{position:relative;background:rgba(0,0,0,0.5);border:1px solid rgba(255,34,68,0.2);border-radius:2px;margin:.5rem 0;overflow-x:auto}
+.ai-msg-bubble code{font-family:'Share Tech Mono',monospace;font-size:.8rem}
+.ai-msg-bubble pre code{display:block;padding:.75rem 1rem}
+.ai-msg-bubble :not(pre)>code{background:rgba(255,34,68,0.08);border:1px solid rgba(255,34,68,0.2);padding:.1rem .35rem;color:var(--gold)}
+.ai-msg-bubble .hljs{background:rgba(0,0,0,0.5)!important}
+.code-copy-btn{position:absolute;top:.35rem;right:.35rem;background:rgba(255,34,68,0.08);border:1px solid rgba(255,34,68,0.25);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:1px;padding:.15rem .45rem;cursor:pointer;opacity:0;transition:all .2s}
+.ai-msg-bubble pre:hover .code-copy-btn{opacity:1}
+.code-copy-btn:hover{color:var(--gold);background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3)}
+.code-copy-btn.copied{color:#22ff88;border-color:#22ff88}
+/* Chat actions (copy + regen) */
+.ai-msg-actions{display:flex;gap:.35rem;margin-top:.35rem;opacity:0;transition:opacity .2s}
+.ai-msg:hover .ai-msg-actions{opacity:1}
+.ai-action-btn{background:transparent;border:1px solid rgba(255,34,68,0.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:1px;padding:.18rem .45rem;cursor:pointer;transition:all .2s}
+.ai-action-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.05)}
+.ai-action-btn.regen{border-color:rgba(255,34,68,0.15);color:rgba(255,100,120,0.6)}
+.ai-action-btn.regen:hover{border-color:var(--red);color:var(--red)}
+/* Clear chat toolbar */
+.ai-toolbar{display:flex;justify-content:flex-end;padding:.3rem .8rem 0;flex-shrink:0}
+.ai-clear-btn{background:transparent;border:1px solid rgba(255,34,68,0.15);color:rgba(255,34,68,0.4);font-family:'Share Tech Mono',monospace;font-size:.55rem;letter-spacing:1px;padding:.2rem .5rem;cursor:pointer;transition:all .2s}
+.ai-clear-btn:hover{border-color:var(--red);color:var(--red);background:rgba(255,34,68,0.06)}
+/* Follow-up suggestions */
+.followup-wrap{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem;padding:0 .2rem}
+.followup-btn{background:transparent;border:1px solid rgba(255,215,0,0.15);color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.58rem;letter-spacing:1px;padding:.28rem .6rem;cursor:pointer;transition:all .25s;text-align:left;line-height:1.4}
+.followup-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(255,215,0,0.05)}
 @keyframes typingDot{0%,100%{opacity:.4;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
 #ai-input-row{padding:.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:.6rem;align-items:flex-end;flex-shrink:0}
 #ai-input{flex:1;background:rgba(255,34,68,0.04);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:.55rem .75rem;resize:none;outline:none;max-height:80px;line-height:1.4;transition:border-color .25s;scrollbar-width:none}
@@ -855,6 +1128,243 @@ nav{
 .ai-msg-bubble .katex .fontsize-ensurer{display:inline-block}
 
 
+/* ═══════════════════════════════════
+   VAULT DOOR OVERLAY
+═══════════════════════════════════ */
+#vault-overlay{
+  position:fixed;top:56px;left:0;width:100%;height:calc(100dvh - 56px);
+  z-index:800;display:none;pointer-events:none;overflow:hidden;
+}
+#vault-overlay.active{display:block;pointer-events:all;}
+
+/* The two door panels */
+.vault-half{
+  position:absolute;top:0;height:100%;width:50%;
+  background:
+    repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(255,34,68,0.05) 59px,rgba(255,34,68,0.05) 60px),
+    repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(255,34,68,0.03) 79px,rgba(255,34,68,0.03) 80px),
+    linear-gradient(160deg,#130608 0%,#0c0306 50%,#0f0408 100%);
+  transition:transform 1.2s cubic-bezier(.77,0,.18,1);
+  overflow:hidden;
+}
+#vault-door-left{
+  left:0;
+  border-right:4px solid var(--red);
+  box-shadow:inset -8px 0 24px rgba(255,34,68,0.15), 4px 0 30px rgba(255,34,68,0.3);
+}
+#vault-door-right{
+  right:0;
+  border-left:4px solid var(--red);
+  box-shadow:inset 8px 0 24px rgba(255,34,68,0.15), -4px 0 30px rgba(255,34,68,0.3);
+}
+#vault-overlay.open #vault-door-left{transform:translateX(-101%);}
+#vault-overlay.open #vault-door-right{transform:translateX(101%);}
+
+/* Corner reinforcement plates */
+.vault-corner{
+  position:absolute;width:60px;height:60px;
+  border:2px solid rgba(255,34,68,0.4);
+}
+.vault-corner.tl{top:12px;left:12px;border-right:none;border-bottom:none;}
+.vault-corner.tr{top:12px;right:12px;border-left:none;border-bottom:none;}
+.vault-corner.bl{bottom:12px;left:12px;border-right:none;border-top:none;}
+.vault-corner.br{bottom:12px;right:12px;border-left:none;border-top:none;}
+
+/* Horizontal ribs across each panel */
+.vault-rib{
+  position:absolute;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,rgba(255,34,68,0.12),rgba(255,34,68,0.2),rgba(255,34,68,0.12),transparent);
+}
+
+/* Bolt columns — fixed to the SEAM edge of each panel */
+.vault-bolt-col{
+  position:absolute;top:0;height:100%;width:26px;
+  display:flex;flex-direction:column;justify-content:space-evenly;align-items:center;
+  z-index:5;
+}
+#vault-door-left .vault-bolt-col{ right:0; }   /* seam side of left panel */
+#vault-door-right .vault-bolt-col{ left:0; }   /* seam side of right panel */
+#vault-door-left .vault-bolt-col-outer{ right:auto; left:0; }   /* outer edge of left panel */
+#vault-door-right .vault-bolt-col-outer{ left:auto; right:0; }  /* outer edge of right panel */
+/* Outer bolts don't animate, just sit flush */
+.vault-bolt-outer{ transform:none!important; opacity:0.75; }
+
+.vault-bolt{
+  width:20px;height:48px;border-radius:3px;
+  background:linear-gradient(180deg,#5a1a28,#380e18);
+  border:2px solid rgba(255,34,68,0.85);
+  box-shadow:0 0 10px var(--red-glow), inset 0 0 6px rgba(255,34,68,0.2);
+  transition:transform .45s cubic-bezier(.4,0,.2,1), background .4s, box-shadow .4s, border-color .4s;
+  position:relative;flex-shrink:0;
+}
+.vault-bolt::before{
+  content:'';position:absolute;top:4px;left:4px;right:4px;height:35%;
+  background:rgba(255,255,255,0.12);border-radius:2px;
+}
+.vault-bolt::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(255,34,68,0.7);
+  box-shadow:0 0 6px var(--red);
+}
+/* Locked = bolt extends toward center seam */
+#vault-door-left  .vault-bolt{ transform:translateX(10px); }
+#vault-door-right .vault-bolt{ transform:translateX(-10px); }
+
+/* Unlocked = bolt retracts into panel, turns green */
+#vault-door-left  .vault-bolt.unlocked{ transform:translateX(-8px); background:linear-gradient(180deg,#1a4d2e,#0f2c1a); border-color:rgba(34,255,136,0.9); box-shadow:0 0 14px rgba(34,255,136,0.6), inset 0 0 6px rgba(34,255,136,0.15); }
+#vault-door-right .vault-bolt.unlocked{ transform:translateX(8px);  background:linear-gradient(180deg,#1a4d2e,#0f2c1a); border-color:rgba(34,255,136,0.9); box-shadow:0 0 14px rgba(34,255,136,0.6), inset 0 0 6px rgba(34,255,136,0.15); }
+.vault-bolt.unlocked::after{ background:rgba(34,255,136,0.8); box-shadow:0 0 8px #22ff88; }
+
+/* Center wheel — sits ON TOP of both panels at the seam */
+#vault-center{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:.85rem;
+  z-index:820;pointer-events:all;
+  transition:opacity .25s ease;
+}
+#vault-overlay.open #vault-center{opacity:0;pointer-events:none;}
+
+#vault-wheel-wrap{
+  position:relative;
+  width:clamp(160px,26vw,220px);
+  height:clamp(160px,26vw,220px);
+  filter:drop-shadow(0 0 22px rgba(255,34,68,0.7));
+}
+#vault-wheel{
+  width:100%;height:100%;
+}
+#vault-wheel.spinning{animation:vaultSpin 1.9s cubic-bezier(.4,0,.2,1) forwards;}
+#vault-wheel.spinfast{animation:vaultSpinFast .12s linear infinite;}
+@keyframes vaultSpin{0%{transform:rotate(0deg)}55%{transform:rotate(700deg)}75%{transform:rotate(640deg)}100%{transform:rotate(720deg)}}
+@keyframes vaultSpinFast{to{transform:rotate(360deg)}}
+
+/* Lock pips around the wheel */
+.lock-indicators{position:absolute;inset:-14px;pointer-events:none;}
+.lock-ind{
+  position:absolute;width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;color:var(--red);
+  text-shadow:0 0 6px var(--red);
+  transition:color .3s,text-shadow .3s;
+}
+.lock-ind:nth-child(1){top:0;left:50%;transform:translateX(-50%)}
+.lock-ind:nth-child(2){bottom:0;left:50%;transform:translateX(-50%)}
+.lock-ind:nth-child(3){left:0;top:50%;transform:translateY(-50%)}
+.lock-ind:nth-child(4){right:0;top:50%;transform:translateY(-50%)}
+.lock-ind.unlocked{color:#22ff88;text-shadow:0 0 10px #22ff88;}
+
+#vault-status{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.52rem,1.2vw,.65rem);
+  color:var(--dim);letter-spacing:3px;
+  text-align:center;max-width:280px;
+  animation:statusBlink 2s infinite;
+}
+@keyframes statusBlink{0%,100%{opacity:1}50%{opacity:.4}}
+
+#vault-btn{
+  padding:.7rem 2rem;
+  background:rgba(255,34,68,0.07);
+  border:1px solid var(--red);color:var(--red);
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.65rem,1.4vw,.8rem);
+  letter-spacing:3px;cursor:pointer;
+  transition:all .3s;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  position:relative;overflow:hidden;
+}
+#vault-btn::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:rgba(255,34,68,0.1);transition:left .3s;
+}
+#vault-btn:hover:not(:disabled)::before{left:0;}
+#vault-btn:hover:not(:disabled){box-shadow:0 0 22px var(--red-glow);color:var(--gold);border-color:var(--gold);}
+#vault-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+#vault-progress-wrap{
+  width:clamp(150px,22vw,200px);
+  display:none;flex-direction:column;gap:.35rem;align-items:stretch;
+}
+#vault-progress-wrap.show{display:flex;}
+#vault-progress-track{
+  width:100%;height:2px;background:rgba(255,34,68,0.1);border:1px solid rgba(255,34,68,0.15);
+}
+#vault-progress-bar{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--red),var(--gold));
+  box-shadow:0 0 8px var(--red);
+  transition:width .35s ease;
+}
+#vault-progress-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.55rem;color:var(--gold);letter-spacing:2px;
+  text-align:center;
+  animation:statusBlink 1s infinite;
+}
+
+
+/* ═══════════════════════════════════
+   PRE-VAULT SCREEN
+═══════════════════════════════════ */
+#prevault-screen{
+  position:fixed;top:56px;left:0;width:100%;height:calc(100dvh - 56px);
+  background:var(--bg);
+  z-index:790;display:none;
+  align-items:center;justify-content:center;
+  pointer-events:none;
+}
+#prevault-screen.active{display:flex;pointer-events:all;}
+
+#prevault-inner{
+  display:flex;flex-direction:column;align-items:center;
+  gap:1.2rem;
+  animation:fadeUp .5s ease both;
+}
+
+#prevault-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:.62rem;letter-spacing:5px;
+  color:var(--red);opacity:.5;
+}
+#prevault-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(1.2rem,4vw,2rem);
+  font-weight:900;color:var(--red);
+  letter-spacing:8px;
+  text-shadow:0 0 30px var(--red-glow);
+}
+#prevault-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.55rem,1.2vw,.65rem);
+  color:var(--dim);letter-spacing:4px;
+  margin-bottom:.5rem;
+}
+
+#vault-btn{
+  padding:.8rem 2.6rem;
+  background:transparent;
+  border:1px solid var(--red);color:var(--red);
+  font-family:'Share Tech Mono',monospace;
+  font-size:clamp(.7rem,1.4vw,.82rem);
+  letter-spacing:4px;cursor:pointer;
+  transition:all .3s;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
+  position:relative;overflow:hidden;
+}
+#vault-btn::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:rgba(255,34,68,0.08);transition:left .3s;
+}
+#vault-btn:hover:not(:disabled)::before{left:0;}
+#vault-btn:hover:not(:disabled){
+  box-shadow:0 0 28px var(--red-glow);
+  color:var(--gold);border-color:var(--gold);
+  text-shadow:0 0 8px var(--gold);
+}
+#vault-btn:disabled{opacity:.4;cursor:not-allowed;}
+
 </style>
 </head>
 <body>
@@ -872,7 +1382,7 @@ nav{
   <div class="nav-logo" onclick="goPage('home')">S<span>I</span>ON</div>
   <ul class="nav-links" id="nav-links">
     <li><button class="nav-btn active" onclick="goPage('home')">Home</button></li>
-    <li><button class="nav-btn" onclick="goPage('about')">About</button></li>
+    <li><button class="nav-btn" id="nav-about-btn" onclick="openVault()">About</button></li>
     <li><button class="nav-btn" onclick="goPage('skills')">Skills</button></li>
     <li><button class="nav-btn" onclick="goPage('projects')">Projects</button></li>
     <li><button class="nav-btn" onclick="goPage('contact')">Contact</button></li>
@@ -885,10 +1395,109 @@ nav{
 <!-- MOBILE DRAWER -->
 <div class="drawer" id="drawer">
   <button class="drawer-btn active" onclick="goPage('home');closeDrawer()">// HOME</button>
-  <button class="drawer-btn" onclick="goPage('about');closeDrawer()">// ABOUT</button>
+  <button class="drawer-btn" onclick="openVault();closeDrawer()">// ABOUT</button>
   <button class="drawer-btn" onclick="goPage('skills');closeDrawer()">// SKILLS</button>
   <button class="drawer-btn" onclick="goPage('projects');closeDrawer()">// PROJECTS</button>
   <button class="drawer-btn" onclick="goPage('contact');closeDrawer()">// CONTACT</button>
+</div>
+
+
+<!-- ══════════ VAULT DOOR OVERLAY ══════════ -->
+<div id="vault-overlay">
+
+  <!-- LEFT PANEL -->
+  <div id="vault-door-left" class="vault-half">
+    <div class="vault-corner tl"></div>
+    <div class="vault-corner bl"></div>
+    <div class="vault-rib" style="top:25%"></div>
+    <div class="vault-rib" style="top:50%"></div>
+    <div class="vault-rib" style="top:75%"></div>
+    <!-- Outer decorative bolts: top + bottom only -->
+    <div class="vault-bolt-col vault-bolt-col-outer">
+      <div class="vault-bolt vault-bolt-outer"></div>
+      <div class="vault-bolt vault-bolt-outer"></div>
+    </div>
+    <!-- Seam bolts: top + bottom only -->
+    <div class="vault-bolt-col">
+      <div class="vault-bolt" id="bolt-l1"></div>
+      <div class="vault-bolt" id="bolt-l4"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="vault-door-right" class="vault-half">
+    <div class="vault-corner tr"></div>
+    <div class="vault-corner br"></div>
+    <div class="vault-rib" style="top:25%"></div>
+    <div class="vault-rib" style="top:50%"></div>
+    <div class="vault-rib" style="top:75%"></div>
+    <!-- Seam bolts: top + bottom only -->
+    <div class="vault-bolt-col">
+      <div class="vault-bolt" id="bolt-r1"></div>
+      <div class="vault-bolt" id="bolt-r4"></div>
+    </div>
+    <!-- Outer decorative bolts: top + bottom only -->
+    <div class="vault-bolt-col vault-bolt-col-outer">
+      <div class="vault-bolt vault-bolt-outer"></div>
+      <div class="vault-bolt vault-bolt-outer"></div>
+    </div>
+  </div>
+
+  <!-- CENTER WHEEL — floats over the seam -->
+  <div id="vault-center">
+    <div id="vault-wheel-wrap">
+      <svg id="vault-wheel" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer bezel -->
+        <circle cx="120" cy="120" r="116" fill="rgba(8,2,6,0.9)" stroke="#ff2244" stroke-width="3" opacity="0.8"/>
+        <!-- Tick marks -->
+        <g id="vault-ticks"></g>
+        <!-- Dashed ring -->
+        <circle cx="120" cy="120" r="98" fill="none" stroke="#cc1133" stroke-width="1.5" stroke-dasharray="6 5"/>
+        <!-- Gold ring -->
+        <circle cx="120" cy="120" r="82" fill="none" stroke="#ffd700" stroke-width="1" stroke-dasharray="3 7" opacity="0.5"/>
+        <!-- 8 spokes -->
+        <line x1="120" y1="22" x2="120" y2="218" stroke="#ff2244" stroke-width="2" opacity="0.45"/>
+        <line x1="22" y1="120" x2="218" y2="120" stroke="#ff2244" stroke-width="2" opacity="0.45"/>
+        <line x1="51" y1="51" x2="189" y2="189" stroke="#ff2244" stroke-width="1.5" opacity="0.3"/>
+        <line x1="189" y1="51" x2="51" y2="189" stroke="#ff2244" stroke-width="1.5" opacity="0.3"/>
+        <!-- Hub plate -->
+        <circle cx="120" cy="120" r="40" fill="rgba(5,2,5,0.98)" stroke="#ffd700" stroke-width="2"/>
+        <circle cx="120" cy="120" r="30" fill="rgba(12,4,8,0.95)" stroke="#ff2244" stroke-width="1.5"/>
+        <!-- Cross handle -->
+        <rect x="88" y="116" width="64" height="8" rx="4" fill="#ff2244" opacity="0.85"/>
+        <rect x="116" y="88" width="8" height="64" rx="4" fill="#cc1133" opacity="0.85"/>
+        <!-- Center dot -->
+        <circle cx="120" cy="120" r="8" fill="#ffd700" opacity="0.9"/>
+        <circle cx="120" cy="120" r="3" fill="#050205"/>
+      </svg>
+      <!-- Lock pips -->
+      <div class="lock-indicators">
+        <div class="lock-ind" id="lock-0">◉</div>
+        <div class="lock-ind" id="lock-1">◉</div>
+        <div class="lock-ind" id="lock-2">◉</div>
+        <div class="lock-ind" id="lock-3">◉</div>
+      </div>
+    </div>
+
+    <div id="vault-status">// DECRYPTING ACCESS...</div>
+    <div id="vault-progress-wrap">
+      <div id="vault-progress-track"><div id="vault-progress-bar"></div></div>
+      <div id="vault-progress-label">UNLOCKING...</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRE-VAULT SCREEN — shown first, before vault animation -->
+<div id="prevault-screen">
+  <div id="prevault-inner">
+    <div id="prevault-tag">// RESTRICTED ZONE</div>
+    <div id="prevault-title">SION · PROFILE</div>
+    <div id="prevault-sub">NEURAL IDENTITY ACCESS REQUIRED</div>
+    <button id="vault-btn" onclick="initiateVaultOpen()">
+      <span id="vault-btn-text">⬡ INITIATE ACCESS</span>
+    </button>
+  </div>
 </div>
 
 <!-- ══════════ PAGE: HOME ══════════ -->
@@ -943,27 +1552,31 @@ nav{
       <div class="sec-line"></div>
     </div>
 
-    <!-- Three.js Canvas Container for About Page -->
-    <div class="cyber-display about-display fade-in" style="margin-bottom:2rem;">
-      <canvas id="about-3d-canvas"></canvas>
-      <div class="display-overlay"></div>
-      <div class="display-label">NEURAL_IDENTITY_V1.0</div>
+    <!-- CSS Deco: About -->
+    <div class="page-deco deco-about fade-in">
+      <div class="deco-corner tl"></div><div class="deco-corner tr"></div>
+      <div class="deco-corner bl"></div><div class="deco-corner br"></div>
+      <div class="deco-grid"></div>
+      <div class="deco-scan"></div>
+      <div class="deco-circuit">
+        <svg viewBox="0 0 800 280" preserveAspectRatio="none">
+          <path class="circuit-path" d="M0,80 H120 L160,40 H300 L340,80 H460 L500,40 H640 L680,80 H800"/>
+          <path class="circuit-path" d="M0,180 H80 L120,220 H260 L300,180 H500 L540,220 H680 L720,180 H800"/>
+          <path class="circuit-path" d="M200,0 V60 L240,100 V180 L200,220 V280"/>
+          <path class="circuit-path" d="M600,0 V40 L560,80 V160 L600,200 V280"/>
+        </svg>
+      </div>
+      <div class="deco-orbit"><div class="orbit-dot"></div></div>
+      <div class="deco-orbit"><div class="orbit-dot"></div></div>
+      <div class="deco-orbit"><div class="orbit-dot"></div></div>
+      <div class="deco-node"></div>
+      <div class="deco-label">NEURAL_IDENTITY_V1.0</div>
     </div>
 
     <div class="about-top fade-in">
       <div class="about-avatar-wrap">
         <div class="avatar-ring">RA</div>
 
-        <!-- SMAN 8 LOGO PLACEHOLDER — replace src="" with your logo path -->
-        <label for="logo-upload" title="Click to upload SMAN 8 logo">
-          <div class="school-logo-placeholder" id="logo-placeholder">
-            <img id="logo-img" src="" alt="SMAN 8 Logo">
-            <div class="logo-placeholder-text" id="logo-text">
-              🏫<br>SMAN 8<br>LOGO<br><span style="color:var(--red);font-size:.5rem">[ CLICK TO UPLOAD ]</span>
-            </div>
-          </div>
-        </label>
-        <input type="file" id="logo-upload" accept="image/*">
       </div>
 
       <div class="about-text">
@@ -1236,11 +1849,25 @@ nav{
       <div class="sec-line"></div>
     </div>
 
-    <!-- Three.js Canvas Container for Skills Page -->
-    <div class="cyber-display skills-display fade-in" style="margin-bottom:2rem;">
-      <canvas id="skills-3d-canvas"></canvas>
-      <div class="display-overlay"></div>
-      <div class="display-label">TECH_CORE_SPHERE</div>
+    <!-- CSS Deco: Skills -->
+    <div class="page-deco deco-skills fade-in">
+      <div class="deco-corner tl"></div><div class="deco-corner tr"></div>
+      <div class="deco-corner bl"></div><div class="deco-corner br"></div>
+      <div class="deco-noise"></div>
+      <div class="deco-scan"></div>
+      <div class="deco-rings">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"><div class="ring-tick"></div></div>
+        <div class="ring"><div class="ring-tick"></div></div>
+        <div class="ring"><div class="ring-tick"></div></div>
+        <div class="ring"><div class="ring-tick"></div></div>
+        <div class="skill-orbiter"></div>
+        <div class="skill-orbiter"></div>
+        <div class="skill-orbiter"></div>
+        <div class="deco-core"></div>
+      </div>
+      <div class="deco-label">TECH_CORE_SPHERE</div>
     </div>
 
     <div class="skills-grid fade-in">
@@ -1309,14 +1936,42 @@ nav{
       <div class="sec-tag">// TOOLS_LOADED</div>
     </div>
     <div class="tools-grid fade-in">
-      <div class="tool-chip"><span class="tool-icon">🌐</span><div class="tool-name">VS Code</div></div>
-      <div class="tool-chip"><span class="tool-icon">🎨</span><div class="tool-name">Figma</div></div>
-      <div class="tool-chip"><span class="tool-icon">📝</span><div class="tool-name">WordPress</div></div>
-      <div class="tool-chip"><span class="tool-icon">🖼️</span><div class="tool-name">Canva</div></div>
-      <div class="tool-chip"><span class="tool-icon">📱</span><div class="tool-name">Adobe XD</div></div>
-      <div class="tool-chip"><span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#f0d8dc"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg></span><div class="tool-name">GitHub</div></div>
-      <div class="tool-chip"><span class="tool-icon">📊</span><div class="tool-name">Google Suite</div></div>
-      <div class="tool-chip"><span class="tool-icon">⚡</span><div class="tool-name">Notion</div></div>
+      <!-- VS Code -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 100 100"><path d="M74.9 6.6L51.4 27.4 32.3 12.7 24 16.8v66.4l8.3 4.1 19.1-14.7 23.5 20.8 9.1-4.5V11.1l-9-4.5zM65 64.5L41.9 50 65 35.5v29z" fill="#007ACC"/><path d="M65 35.5L41.9 50 65 64.5V35.5z" fill="#1F9CF0" opacity="0.6"/><path d="M32.3 87.3L24 83.2V16.8l8.3 4.1v66.4z" fill="#0065A9"/></svg></span>
+        <div class="tool-name">VS Code</div>
+      </div>
+      <!-- Figma -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 38 57"><path d="M19 28.5a9.5 9.5 0 1 1 19 0 9.5 9.5 0 0 1-19 0z" fill="#1ABCFE"/><path d="M0 47.5A9.5 9.5 0 0 1 9.5 38H19v9.5a9.5 9.5 0 0 1-19 0z" fill="#0ACF83"/><path d="M19 0v19h9.5a9.5 9.5 0 0 0 0-19H19z" fill="#FF7262"/><path d="M0 9.5A9.5 9.5 0 0 0 9.5 19H19V0H9.5A9.5 9.5 0 0 0 0 9.5z" fill="#F24E1E"/><path d="M0 28.5A9.5 9.5 0 0 0 9.5 38H19V19H9.5A9.5 9.5 0 0 0 0 28.5z" fill="#A259FF"/></svg></span>
+        <div class="tool-name">Figma</div>
+      </div>
+      <!-- WordPress -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#21759B"/><path d="M2.2 12c0 4.3 2.5 8 6.1 9.8L2.9 7.2C2.4 8.7 2.2 10.3 2.2 12zM17.7 11.5c0-1.3-.5-2.3-1-3-.6-.9-1.1-1.7-1.1-2.6 0-1 .8-1.9 1.9-1.9h.1C15.7 2.8 13.9 2.2 12 2.2c-2.6 0-4.9 1.3-6.3 3.3h.5c1.2 0 3.1-.1 3.1-.1.6 0 .7.9.1.9 0 0-.6.1-1.3.1l4.2 12.5 2.5-7.5-1.8-5c-.6 0-1.2-.1-1.2-.1-.6 0-.5-.9.1-.9 0 0 2 .1 3.1.1 1.2 0 3.1-.1 3.1-.1.6 0 .7.9.1.9 0 0-.6.1-1.3.1l4.2 12.4.8-3c.7-2.1.4-3.7.4-4.3zm-5.4 1.1l-3.5 10.2c1 .3 2.1.5 3.2.5 1.3 0 2.6-.2 3.8-.7l-.1-.2-3.4-9.8zm8.1-5.3c0 1.1-.2 2.3-.8 3.8l-3.4 9.8c3.3-1.9 5.5-5.4 5.5-9.4 0-1.5-.4-3-.9-4.2z" fill="white"/></svg></span>
+        <div class="tool-name">WordPress</div>
+      </div>
+      <!-- Canva -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#00C4CC"/><path d="M16.8 14.7c-.2.5-.6 1.5-1.4 2.2-.9.8-1.9 1-2.5 1-2.4 0-4.2-2-4.2-4.8 0-2.6 1.7-5 4.3-5 .7 0 1.5.2 2.1.8.5.5.8 1.1.9 1.6l-1.6.5c-.1-.4-.3-.8-.6-1-.2-.2-.5-.4-1-.4-1.4 0-2.3 1.4-2.3 3.4 0 2.1 1 3.3 2.3 3.3.5 0 .9-.2 1.2-.5.5-.5.7-1.1.8-1.5l2 .4z" fill="white"/></svg></span>
+        <div class="tool-name">Canva</div>
+      </div>
+
+      <!-- GitHub -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#24292E"/><path d="M12 2.2C6.5 2.2 2 6.7 2 12.2c0 4.4 2.9 8.2 6.9 9.5.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.5 9.5 0 0 1 5 0c2-.9 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.7.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5 4-1.3 6.9-5.1 6.9-9.5C22 6.7 17.5 2.2 12 2.2z" fill="white"/></svg></span>
+        <div class="tool-name">GitHub</div>
+      </div>
+      <!-- Google Suite -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg></span>
+        <div class="tool-name">Google Suite</div>
+      </div>
+      <!-- Notion -->
+      <div class="tool-chip">
+        <span class="tool-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#ffffff"/><path d="M27 20h32l18 18v42c0 2-1.5 3.5-3.5 3.5H27c-2 0-3.5-1.5-3.5-3.5V23.5c0-2 1.5-3.5 3.5-3.5z" fill="#fff" stroke="#e0e0e0" stroke-width="2"/><path d="M59 20v18h18" fill="none" stroke="#e0e0e0" stroke-width="2"/><text x="34" y="66" font-family="Georgia,serif" font-weight="900" font-size="34" fill="#000">N</text></svg></span>
+        <div class="tool-name">Notion</div>
+      </div>
     </div>
 
     <div class="page-footer">© 2026 <strong>SION</strong> — <span>Reza Aditya Lasoma</span> · SMAN 8 Jakarta</div>
@@ -1332,11 +1987,27 @@ nav{
       <div class="sec-line"></div>
     </div>
 
-    <!-- Three.js Canvas Container for Projects Page -->
-    <div class="cyber-display projects-display fade-in" style="margin-bottom:2rem;">
-      <canvas id="projects-3d-canvas"></canvas>
-      <div class="display-overlay"></div>
-      <div class="display-label">DATA_TUNNEL_VISUALIZER</div>
+    <!-- CSS Deco: Projects -->
+    <div class="page-deco deco-projects fade-in">
+      <div class="deco-corner tl"></div><div class="deco-corner tr"></div>
+      <div class="deco-corner bl"></div><div class="deco-corner br"></div>
+      <div class="deco-tunnel">
+        <div class="tunnel-grid">
+          <div class="t-floor"></div>
+          <div class="t-ceil"></div>
+          <div class="t-wall-l"></div>
+          <div class="t-wall-r"></div>
+          <div class="t-horizon"></div>
+          <div class="t-vp"></div>
+          <div class="t-cube"></div>
+          <div class="t-cube"></div>
+          <div class="t-cube"></div>
+          <div class="t-cube"></div>
+          <div class="t-cube"></div>
+          <div class="t-cube"></div>
+        </div>
+      </div>
+      <div class="deco-label">DATA_TUNNEL_VISUALIZER</div>
     </div>
 
     <div class="projects-grid fade-in">
@@ -1425,11 +2096,52 @@ nav{
       <div class="sec-line"></div>
     </div>
 
-    <!-- Three.js Canvas Container for Contact Page - Earth Globe -->
-    <div class="cyber-display contact-display fade-in" style="margin-bottom:2rem;">
-      <canvas id="contact-3d-canvas"></canvas>
-      <div class="display-overlay"></div>
-      <div class="display-label">EARTH_TRACKER_JKT</div>
+    <!-- CSS Deco: Contact Globe -->
+    <div class="page-deco deco-contact fade-in">
+      <div class="deco-corner tl"></div><div class="deco-corner tr"></div>
+      <div class="deco-corner bl"></div><div class="deco-corner br"></div>
+      <div class="deco-scan"></div>
+      <!-- stars -->
+      <div class="globe-star" style="top:10%;left:5%"></div>
+      <div class="globe-star" style="top:20%;left:15%;width:3px;height:3px;opacity:.6"></div>
+      <div class="globe-star" style="top:8%;left:80%"></div>
+      <div class="globe-star" style="top:70%;left:90%;width:3px;height:3px;opacity:.5"></div>
+      <div class="globe-star" style="top:85%;left:8%"></div>
+      <div class="globe-star" style="top:40%;left:92%"></div>
+      <div class="globe-star" style="top:60%;left:3%;width:3px;height:3px;opacity:.7"></div>
+      <div class="globe-star" style="top:15%;left:88%;width:3px;height:3px;opacity:.4"></div>
+      <div class="deco-globe-wrap">
+        <div class="globe-ring-outer"></div>
+        <div class="globe-ring-outer"></div>
+        <div class="deco-globe">
+          <svg class="globe-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Globe outline -->
+            <circle cx="100" cy="100" r="90" fill="rgba(10,20,40,0.6)" stroke="rgba(255,34,68,0.4)" stroke-width="1.2"/>
+            <!-- Latitude lines -->
+            <ellipse cx="100" cy="100" rx="90" ry="18" fill="none" stroke="rgba(255,34,68,0.15)" stroke-width=".8"/>
+            <ellipse cx="100" cy="100" rx="90" ry="45" fill="none" stroke="rgba(255,34,68,0.12)" stroke-width=".8"/>
+            <ellipse cx="100" cy="100" rx="90" ry="72" fill="none" stroke="rgba(255,34,68,0.1)" stroke-width=".8"/>
+            <!-- Equator -->
+            <line x1="10" y1="100" x2="190" y2="100" stroke="rgba(255,34,68,0.25)" stroke-width=".8"/>
+            <!-- Longitude lines -->
+            <ellipse cx="100" cy="100" rx="22" ry="90" fill="none" stroke="rgba(255,215,0,0.12)" stroke-width=".8"/>
+            <ellipse cx="100" cy="100" rx="55" ry="90" fill="none" stroke="rgba(255,215,0,0.1)" stroke-width=".8"/>
+            <ellipse cx="100" cy="100" rx="80" ry="90" fill="none" stroke="rgba(255,215,0,0.08)" stroke-width=".8"/>
+            <!-- Prime meridian -->
+            <line x1="100" y1="10" x2="100" y2="190" stroke="rgba(255,34,68,0.2)" stroke-width=".8"/>
+            <!-- Continent outlines (simplified SE Asia + rest) -->
+            <path d="M125,85 L130,80 L138,82 L142,88 L138,95 L130,95 Z" fill="rgba(255,34,68,0.18)" stroke="rgba(255,34,68,0.5)" stroke-width=".7"/>
+            <path d="M60,55 L80,50 L95,55 L90,70 L75,72 L62,65 Z" fill="rgba(255,34,68,0.12)" stroke="rgba(255,34,68,0.4)" stroke-width=".7"/>
+            <path d="M110,110 L118,108 L122,115 L118,122 L110,120 Z" fill="rgba(255,34,68,0.15)" stroke="rgba(255,34,68,0.45)" stroke-width=".7"/>
+          </svg>
+          <!-- Jakarta marker -->
+          <div class="jakarta-marker">
+            <div class="jkt-dot"></div>
+            <div class="jkt-ring"></div>
+          </div>
+        </div>
+      </div>
+      <div class="deco-label">EARTH_TRACKER_JKT — 6.2°S 106.8°E</div>
     </div>
 
     <div class="contact-wrap fade-in">
@@ -1512,6 +2224,7 @@ nav{
       <button id="ai-close" aria-label="Close chat">✕</button>
     </div>
     <div id="ai-messages">
+      <div class="ai-toolbar"><button class="ai-clear-btn" id="ai-clear-btn">✕ CLEAR</button></div>
       <div class="ai-msg bot">
         <div class="ai-msg-label">SION·AI</div>
         <div class="ai-msg-bubble">Hey! I'm SION's AI assistant. Ask me anything about Reza, his projects, or just say hello.</div>
@@ -1532,132 +2245,182 @@ nav{
 
 <script>
 /* ═══════════════════════════════════
-   AI CHATBOT — OPENROUTER
+   AI CHATBOT — OPENROUTER (ENHANCED)
 ═══════════════════════════════════ */
 (function(){
-  // ──────────────────────────────────
-  // 🔑 PUT YOUR OPENROUTER KEY HERE:
-  const OPENROUTER_API_KEY = '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';
-  // ──────────────────────────────────
-  // Model to use — free tier default
-  const MODEL = 'openrouter/free';
+  const OPENROUTER_API_KEY='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';
+  const MODEL='deepseek/deepseek-chat-v3-0324:free';
+  const BASE_SYSTEM=`You are SION's AI assistant on his personal portfolio site. SION is Reza Aditya Lasoma, a student developer and UI/UX designer from SMAN 8 Jakarta, Indonesia. He builds web projects, experiments with MIT App Inventor, and is passionate about creative technology. Keep answers concise, friendly, and slightly tech-flavored to match the cyberpunk aesthetic of the site.`;
 
-  const SYSTEM_PROMPT = `You are SION's AI assistant on his personal portfolio site. SION is Reza Aditya Lasoma, a student developer and UI/UX designer from SMAN 8 Jakarta, Indonesia. He builds web projects, experiments with MIT App Inventor, and is passionate about creative technology. Keep answers concise, friendly, and slightly tech-flavored to match the cyberpunk aesthetic of the site.`;
+  const panel=document.getElementById('ai-panel');
+  const toggle=document.getElementById('ai-toggle');
+  const closeBtn=document.getElementById('ai-close');
+  const input=document.getElementById('ai-input');
+  const sendBtn=document.getElementById('ai-send');
+  const msgs=document.getElementById('ai-messages');
+  const clearBtn=document.getElementById('ai-clear-btn');
 
-  const panel    = document.getElementById('ai-panel');
-  const toggle   = document.getElementById('ai-toggle');
-  const closeBtn = document.getElementById('ai-close');
-  const input    = document.getElementById('ai-input');
-  const sendBtn  = document.getElementById('ai-send');
-  const msgs     = document.getElementById('ai-messages');
+  let history=[];
+  let inFlight=false;
+  let cachedRepos=null;
 
-  const history  = []; // rolling conversation history
-
-  toggle.addEventListener('click',()=>{
-    panel.classList.toggle('open');
-    if(panel.classList.contains('open')) input.focus();
-  });
-  closeBtn.addEventListener('click',()=>panel.classList.remove('open'));
-
-  // Auto-resize textarea
-  input.addEventListener('input',()=>{
-    input.style.height='auto';
-    input.style.height=Math.min(input.scrollHeight,80)+'px';
-  });
-  input.addEventListener('keydown',(e)=>{
-    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}
-  });
-  sendBtn.addEventListener('click',sendMsg);
-
-  function renderContent(text){
-    // Use marked for markdown if available
-    if(typeof marked!=='undefined'){
-      // Configure marked options for better output
-      marked.setOptions({
-        breaks: true,
-        gfm: true,
-        headerIds: false,
-        mangle: false
-      });
-      
-      // Extract math blocks before markdown processing to prevent escaping
-      const mathBlocks = [];
-      let processedText = text;
-      
-      // Extract display math $$...$$
-      processedText = processedText.replace(/\$\$([\s\S]*?)\$\$/g, (match, p1) => {
-        const idx = mathBlocks.length;
-        mathBlocks.push({ type: 'display', content: p1 });
-        return `__MATH_BLOCK_${idx}__`;
-      });
-      
-      // Extract inline math $...$ - simpler approach without lookbehind
-      processedText = processedText.replace(/\$([^$\n]+?)\$/g, (match, p1) => {
-        const idx = mathBlocks.length;
-        mathBlocks.push({ type: 'inline', content: p1 });
-        return `__MATH_INLINE_${idx}__`;
-      });
-      
-      const html = marked.parse(processedText);
-      
-      // Restore math blocks
-      let result = html;
-      mathBlocks.forEach((block, idx) => {
-        const placeholderDisplay = `__MATH_BLOCK_${idx}__`;
-        const placeholderInline = `__MATH_INLINE_${idx}__`;
-        if (block.type === 'display') {
-          result = result.replace(placeholderDisplay, `$$${block.content}$$`);
-        } else {
-          result = result.replace(placeholderInline, `$${block.content}$`);
-        }
-      });
-      
-      return result;
-    }
-    // Fallback: basic bold/italic
-    return text
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g,'<em>$1</em>')
-      .replace(/`(.+?)`/g,'<code>$1</code>');
+  // ── GitHub repo fetch for context ──
+  async function fetchRepos(){
+    if(cachedRepos!==null) return cachedRepos;
+    try{
+      const r=await fetch('https://api.github.com/users/SION1256/repos?sort=updated&per_page=10');
+      const data=await r.json();
+      cachedRepos=data.map(repo=>`- ${repo.name}: ${repo.description||'no description'} (${repo.language||'unknown'})`).join('\n');
+    }catch(e){cachedRepos='';}
+    return cachedRepos;
   }
 
-  function appendMsg(role,text){
-    const wrap=document.createElement('div');
-    wrap.className='ai-msg '+role;
-    const label=document.createElement('div');
-    label.className='ai-msg-label';
-    label.textContent=role==='user'?'YOU':'SION·AI';
-    const bubble=document.createElement('div');
-    bubble.className='ai-msg-bubble';
-    if(role==='bot'){
-      bubble.innerHTML=renderContent(text);
-      // Render KaTeX after inserting HTML
-      if(typeof katex!=='undefined' && typeof renderMathInElement!=='undefined'){
-        try {
-          renderMathInElement(bubble,{
-            delimiters:[
-              {left:'$$',right:'$$',display:true},
-              {left:'$',right:'$',display:false},
-              {left:'\\[',right:'\\]',display:true},
-              {left:'\\(',right:'\\)',display:false}
-            ],
-            throwOnError: false,
-            output: 'html',
-            trust: true
-          });
-        } catch(e) {
-          console.warn('KaTeX rendering error:', e);
-        }
-      }
+  function buildSystemPrompt(repos){
+    return BASE_SYSTEM+(repos?`\n\nSION's current GitHub repos:\n${repos}`:'');
+  }
+
+  // ── Math-safe markdown parser ──
+  function renderContent(text){
+    const stash=[];
+    const s=(m)=>{const id=`XMATHX${stash.length}XMATHX`;stash.push(m);return id;};
+    let safe=text
+      .replace(/\$\$[\s\S]*?\$\$/g,s)
+      .replace(/\\\[[\s\S]*?\\\]/g,s)
+      .replace(/\\\([\s\S]*?\\\)/g,s)
+      .replace(/(?<!\$)\$(?!\$)[^\n$]*?\$(?!\$)/g,s);
+    let html;
+    if(typeof marked!=='undefined'){
+      marked.setOptions({breaks:true,gfm:true});
+      html=marked.parse(safe);
     } else {
-      bubble.textContent=text;
+      html=safe.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/`(.+?)`/g,'<code>$1</code>');
     }
-    wrap.appendChild(label);
-    wrap.appendChild(bubble);
+    return html.replace(/XMATHX(\d+)XMATHX/g,(_,i)=>stash[+i]);
+  }
+
+  // ── Safe KaTeX dual-mode renderer ──
+  function safeRenderMath(container){
+    if(!window.katex&&!window.renderMathInElement) return;
+    const delimiters=[
+      {left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},
+      {left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}
+    ];
+    try{
+      if(window.renderMathInElement){renderMathInElement(container,{delimiters,throwOnError:false,strict:false});return;}
+    }catch(e){}
+    if(!window.katex) return;
+    function rExpr(expr,display){try{return window.katex.renderToString(expr,{displayMode:display,throwOnError:false,strict:false});}catch(e){return null;}}
+    function walk(node){
+      if(node.nodeType===3){
+        const t=node.textContent;
+        if(!/\$|\\\[|\\\(/.test(t)) return;
+        let html=t,changed=false;
+        [{re:/\$\$([\s\S]+?)\$\$/g,d:true},{re:/\\\[([\s\S]+?)\\\]/g,d:true},
+         {re:/\\\(([\s\S]+?)\\\)/g,d:false},{re:/(?<!\$)\$(?!\$)([^\n$]+?)\$(?!\$)/g,d:false}
+        ].forEach(({re,d})=>{html=html.replace(re,(m,e)=>{const r=rExpr(e.trim(),d);if(r){changed=true;return r;}return m;});});
+        if(changed){const sp=document.createElement('span');sp.innerHTML=html;node.parentNode.replaceChild(sp,node);}
+      } else if(node.nodeType===1&&!['SCRIPT','STYLE','CODE','PRE'].includes(node.tagName)){
+        Array.from(node.childNodes).forEach(walk);
+      }
+    }
+    Array.from(container.childNodes).forEach(walk);
+  }
+
+  // ── Apply code highlighting + copy buttons ──
+  function applyCodeFeatures(container){
+    container.querySelectorAll('pre code').forEach(block=>{
+      if(window.hljs) hljs.highlightElement(block);
+      const pre=block.parentElement;
+      const btn=document.createElement('button');
+      btn.className='code-copy-btn';btn.textContent='COPY';
+      btn.onclick=()=>{
+        navigator.clipboard.writeText(block.innerText).then(()=>{
+          btn.textContent='COPIED!';btn.classList.add('copied');
+          setTimeout(()=>{btn.textContent='COPY';btn.classList.remove('copied');},1800);
+        });
+      };
+      pre.style.position='relative';
+      pre.appendChild(btn);
+    });
+    safeRenderMath(container);
+    container.querySelectorAll('a').forEach(a=>{a.target='_blank';a.rel='noopener noreferrer';});
+  }
+
+  // ── Typewriter effect ──
+  async function typewriter(bubble,fullText){
+    const html=renderContent(fullText);
+    const tmp=document.createElement('div');tmp.innerHTML=html;
+    const plain=tmp.textContent;
+    bubble.innerHTML='';
+    let i=0;
+    await new Promise(resolve=>{
+      const iv=setInterval(()=>{
+        i=Math.min(i+6,plain.length);
+        bubble.textContent=plain.slice(0,i);
+        msgs.scrollTop=msgs.scrollHeight;
+        if(i>=plain.length){
+          clearInterval(iv);
+          bubble.innerHTML=html;
+          applyCodeFeatures(bubble);
+          msgs.scrollTop=msgs.scrollHeight;
+          resolve();
+        }
+      },4);
+    });
+  }
+
+  // ── Add copy + regen action buttons ──
+  function addActions(wrap,rawText){
+    const actions=document.createElement('div');
+    actions.className='ai-msg-actions';
+    // Copy
+    const copyBtn=document.createElement('button');
+    copyBtn.className='ai-action-btn';copyBtn.textContent='⎘ COPY';
+    copyBtn.onclick=()=>{
+      navigator.clipboard.writeText(rawText).then(()=>{
+        copyBtn.textContent='✓ COPIED';
+        setTimeout(()=>{copyBtn.textContent='⎘ COPY';},1800);
+      });
+    };
+    // Regen
+    const regenBtn=document.createElement('button');
+    regenBtn.className='ai-action-btn regen';regenBtn.textContent='↺ REGEN';
+    regenBtn.onclick=async()=>{
+      if(inFlight) return;
+      if(history.length&&history[history.length-1].role==='assistant') history.pop();
+      wrap.remove();
+      document.querySelectorAll('.followup-wrap').forEach(el=>el.remove());
+      await getBotReply();
+    };
+    actions.appendChild(copyBtn);
+    actions.appendChild(regenBtn);
+    wrap.appendChild(actions);
+  }
+
+  // ── Append a message bubble ──
+  function appendUser(text){
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg user';
+    const label=document.createElement('div');label.className='ai-msg-label';label.textContent='YOU';
+    const bubble=document.createElement('div');bubble.className='ai-msg-bubble';bubble.textContent=text;
+    wrap.appendChild(label);wrap.appendChild(bubble);
+    msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  }
+
+  async function appendBot(text){
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg bot';
+    const label=document.createElement('div');label.className='ai-msg-label';label.textContent='SION·AI';
+    const bubble=document.createElement('div');bubble.className='ai-msg-bubble';
+    wrap.appendChild(label);wrap.appendChild(bubble);
     msgs.appendChild(wrap);
+    await typewriter(bubble,text);
+    addActions(wrap,text);
     msgs.scrollTop=msgs.scrollHeight;
-    return bubble;
+    generateFollowUps();
   }
 
   function showTyping(){
@@ -1665,51 +2428,103 @@ nav{
     wrap.className='ai-msg bot';wrap.id='ai-typing-indicator';
     const dot=document.createElement('div');dot.className='ai-typing';
     dot.innerHTML='<span></span><span></span><span></span>';
-    wrap.appendChild(dot);msgs.appendChild(wrap);
-    msgs.scrollTop=msgs.scrollHeight;
+    wrap.appendChild(dot);msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
   }
-  function hideTyping(){
-    const t=document.getElementById('ai-typing-indicator');
-    if(t)t.remove();
-  }
+  function hideTyping(){const t=document.getElementById('ai-typing-indicator');if(t)t.remove();}
 
-  async function sendMsg(){
-    const text=input.value.trim();
-    if(!text||sendBtn.disabled)return;
-    input.value='';input.style.height='auto';
-    appendMsg('user',text);
-    history.push({role:'user',content:text});
-    sendBtn.disabled=true;showTyping();
-
+  // ── Follow-up suggestions ──
+  async function generateFollowUps(){
+    document.querySelectorAll('.followup-wrap').forEach(el=>el.remove());
     try{
       const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
         method:'POST',
-        headers:{
-          'Content-Type':'application/json',
-          'Authorization':'Bearer '+OPENROUTER_API_KEY,
-          'HTTP-Referer':location.origin,
-          'X-Title':'SION Portfolio AI'
-        },
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_API_KEY,'HTTP-Referer':location.origin,'X-Title':'SION Portfolio AI'},
+        body:JSON.stringify({
+          model:MODEL,max_tokens:120,
+          messages:[
+            {role:'system',content:'Generate exactly 3 short follow-up questions as a JSON array of strings. Return ONLY the JSON array, nothing else.'},
+            ...history.slice(-6),
+            {role:'user',content:'Give me 3 short follow-up questions the user might ask next. JSON array only.'}
+          ]
+        })
+      });
+      const data=await res.json();
+      const raw=data?.choices?.[0]?.message?.content?.trim()||'';
+      const questions=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      if(!Array.isArray(questions)) return;
+      const wrap=document.createElement('div');wrap.className='followup-wrap';
+      questions.slice(0,3).forEach(q=>{
+        const btn=document.createElement('button');
+        btn.className='followup-btn';btn.textContent='↳ '+q;
+        btn.onclick=()=>{input.value=q;wrap.remove();sendMsg();};
+        wrap.appendChild(btn);
+      });
+      msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+    }catch(e){/* silent fail */}
+  }
+
+  // ── Core API call ──
+  async function getBotReply(){
+    inFlight=true;sendBtn.disabled=true;showTyping();
+    const repos=await fetchRepos();
+    try{
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+OPENROUTER_API_KEY,'HTTP-Referer':location.origin,'X-Title':'SION Portfolio AI'},
         body:JSON.stringify({
           model:MODEL,
-          messages:[
-            {role:'system',content:SYSTEM_PROMPT},
-            ...history.slice(-10) // keep last 10 turns for context
-          ]
+          max_tokens:800,
+          messages:[{role:'system',content:buildSystemPrompt(repos)},...history.slice(-12)]
         })
       });
       const data=await res.json();
       hideTyping();
       const reply=data?.choices?.[0]?.message?.content||'[signal lost — try again]';
       history.push({role:'assistant',content:reply});
-      appendMsg('bot',reply);
+      await appendBot(reply);
     }catch(err){
       hideTyping();
-      appendMsg('bot','[connection error: '+err.message+']');
+      await appendBot('[connection error: '+err.message+']');
     }finally{
-      sendBtn.disabled=false;input.focus();
+      inFlight=false;sendBtn.disabled=false;input.focus();
     }
   }
+
+  async function sendMsg(){
+    const text=input.value.trim();
+    if(!text||inFlight) return;
+    input.value='';input.style.height='auto';
+    document.querySelectorAll('.followup-wrap').forEach(el=>el.remove());
+    appendUser(text);
+    history.push({role:'user',content:text});
+    await getBotReply();
+  }
+
+  // ── Clear chat ──
+  clearBtn.addEventListener('click',()=>{
+    history=[];
+    Array.from(msgs.children).forEach(c=>{if(!c.classList.contains('ai-toolbar')) c.remove();});
+    document.querySelectorAll('.followup-wrap').forEach(el=>el.remove());
+    // Re-add greeting without triggering follow-ups
+    const wrap=document.createElement('div');
+    wrap.className='ai-msg bot';
+    const label=document.createElement('div');label.className='ai-msg-label';label.textContent='SION·AI';
+    const bubble=document.createElement('div');bubble.className='ai-msg-bubble';
+    bubble.textContent='Chat cleared. Ask me anything about SION!';
+    wrap.appendChild(label);wrap.appendChild(bubble);
+    msgs.appendChild(wrap);
+    msgs.scrollTop=msgs.scrollHeight;
+  });
+
+  // ── Toggle ──
+  toggle.addEventListener('click',()=>{
+    panel.classList.toggle('open');
+    if(panel.classList.contains('open')) input.focus();
+  });
+  closeBtn.addEventListener('click',()=>panel.classList.remove('open'));
+  input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,80)+'px';});
+  input.addEventListener('keydown',(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+  sendBtn.addEventListener('click',sendMsg);
 })();
 
 /* ═══════════════════════════════════
@@ -1997,6 +2812,9 @@ window.goPage=function(id){
 
   const vignette=document.getElementById('home-vignette');
   if(vignette) vignette.classList.toggle('visible', id==='home');
+
+  // Close drawer on mobile
+  closeDrawer();
 };
 
 /* ═══════════════════════════════════
@@ -2055,19 +2873,7 @@ window.closeDrawer=function(){
 /* ═══════════════════════════════════
    LOGO UPLOAD (About page)
 ═══════════════════════════════════ */
-document.getElementById('logo-upload').addEventListener('change',function(){
-  const f=this.files[0];
-  if(!f)return;
-  const r=new FileReader();
-  r.onload=function(e){
-    const img=document.getElementById('logo-img');
-    const txt=document.getElementById('logo-text');
-    img.src=e.target.result;
-    img.style.display='block';
-    txt.style.display='none';
-  };
-  r.readAsDataURL(f);
-});
+// Logo is now embedded directly — upload handler removed
 
 
 /* ═══════════════════════════════════
@@ -2122,6 +2928,129 @@ document.getElementById('logo-upload').addEventListener('change',function(){
   // Register so goPage can call it
   window._runTerminal = runTerminal;
 })();
+
+
+
+/* ═══════════════════════════════════
+   VAULT DOOR — ABOUT PAGE GATE
+═══════════════════════════════════ */
+(function(){
+  // Generate tick marks on the SVG wheel
+  const ticksEl = document.getElementById('vault-ticks');
+  if(ticksEl){
+    for(let i=0;i<36;i++){
+      const angle = i*10;
+      const rad = angle * Math.PI/180;
+      const r1=109, r2=i%3===0?102:106;
+      const x1=120+r1*Math.sin(rad), y1=120-r1*Math.cos(rad);
+      const x2=120+r2*Math.sin(rad), y2=120-r2*Math.cos(rad);
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',x1);line.setAttribute('y1',y1);
+      line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+      line.setAttribute('stroke',i%3===0?'#ffd700':'#ff2244');
+      line.setAttribute('stroke-width',i%3===0?'2':'1');
+      line.setAttribute('opacity',i%3===0?'0.7':'0.4');
+      ticksEl.appendChild(line);
+    }
+  }
+})();
+
+window.openVault = function(){
+  // Mark nav active
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.id==='nav-about-btn');
+  });
+  document.querySelectorAll('.drawer-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.includes('ABOUT'));
+  });
+
+  // Hide everything else, show pre-vault screen first
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const vignette=document.getElementById('home-vignette');
+  if(vignette) vignette.classList.remove('visible');
+
+  // Reset vault state
+  const overlay = document.getElementById('vault-overlay');
+  overlay.classList.remove('active','open');
+  document.querySelectorAll('.vault-bolt').forEach(b=>b.classList.remove('unlocked'));
+  document.querySelectorAll('.lock-ind').forEach(l=>l.classList.remove('unlocked'));
+  document.getElementById('vault-wheel').className='';
+  document.getElementById('vault-btn').disabled=false;
+  document.getElementById('vault-btn-text').textContent='⬡ INITIATE ACCESS';
+  document.getElementById('vault-status').textContent='// DECRYPTING ACCESS...';
+  document.getElementById('vault-progress-wrap').classList.remove('show');
+  document.getElementById('vault-progress-bar').style.width='0%';
+
+  // Show the pre-vault screen
+  document.getElementById('prevault-screen').classList.add('active');
+  closeDrawer();
+};
+
+window.initiateVaultOpen = function(){
+  // Hide pre-vault screen, show vault overlay
+  document.getElementById('prevault-screen').classList.remove('active');
+  document.getElementById('vault-overlay').classList.add('active');
+
+  const btn = document.getElementById('vault-btn');
+  const wheel = document.getElementById('vault-wheel');
+  const status = document.getElementById('vault-status');
+  const progress = document.getElementById('vault-progress-wrap');
+  const bar = document.getElementById('vault-progress-bar');
+
+  btn.disabled = true;
+  progress.classList.add('show');
+
+  const boltsL = ['bolt-l1','bolt-l4'];
+  const boltsR = ['bolt-r1','bolt-r4'];
+  const locks  = ['lock-0','lock-1','lock-2','lock-3'];
+  const stages = ['SCANNING BIOMETRICS...','VERIFYING NEURAL SIGNATURE...','DISENGAGING LOCK ARRAY...','ACCESS GRANTED — STAND BY'];
+
+  // Fast spin during unlock
+  wheel.className = 'spinfast';
+
+  let step = 0;
+  const totalSteps = 4;
+
+  function unlockStep(){
+    if(step >= totalSteps){
+      // All unlocked — do final spin and open
+      wheel.className = 'spinning';
+      status.textContent = '// ACCESS GRANTED — OPENING VAULT';
+      bar.style.width = '100%';
+
+      setTimeout(()=>{
+        const overlay = document.getElementById('vault-overlay');
+        overlay.classList.add('open');
+        // After door slides, show about page
+        setTimeout(()=>{
+          overlay.classList.remove('active');
+          // Actually navigate
+          document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+          const pg = document.getElementById('page-about');
+          if(pg){ pg.classList.add('active'); pg.scrollTop=0; }
+          setTimeout(()=>{document.querySelectorAll('.pers-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},200);
+          setTimeout(window._runTerminal||function(){},400);
+          const vignette=document.getElementById('home-vignette');
+          if(vignette) vignette.classList.remove('visible');
+        }, 1200);
+      }, 600);
+      return;
+    }
+
+    status.textContent = '// ' + stages[step];
+    bar.style.width = ((step+1)/totalSteps*85) + '%';
+
+    // Unlock bolts: step 0 = top bolts, step 2 = bottom bolts
+    if(step === 0){ document.getElementById('bolt-l1').classList.add('unlocked'); document.getElementById('bolt-r1').classList.add('unlocked'); }
+    if(step === 2){ document.getElementById('bolt-l4').classList.add('unlocked'); document.getElementById('bolt-r4').classList.add('unlocked'); }
+    document.getElementById(locks[step]).classList.add('unlocked');
+
+    step++;
+    setTimeout(unlockStep, 520);
+  }
+
+  setTimeout(unlockStep, 400);
+};
 
 /* ═══════════════════════════════════
    LOGO UPLOAD end — close regular script
@@ -2189,678 +3118,6 @@ async function handleSend(){
 
 // Event listener inside module — no race condition
 document.querySelector('.btn-send').addEventListener('click', handleSend);
-
-/* ═══════════════════════════════════
-   PAGE-SPECIFIC THREE.JS SCENES
-   Each page gets its own unique 3D experience
-═══════════════════════════════════ */
-
-// Store references to active scenes/renderers for cleanup
-const pageScenes = {
-  about: null,
-  skills: null,
-  projects: null
-};
-
-// Cleanup function for Three.js scenes
-function cleanupScene(canvasId) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  
-  // Get stored scene data
-  const sceneData = canvas._threeData;
-  if (!sceneData) return;
-  
-  const { scene, renderer, camera, objects } = sceneData;
-  
-  // Remove all objects from scene
-  if (objects) {
-    objects.forEach(obj => {
-      if (obj.geometry) obj.geometry.dispose();
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(m => m.dispose());
-        } else {
-          obj.material.dispose();
-        }
-      }
-      scene.remove(obj);
-    });
-  }
-  
-  // Clear renderer
-  if (renderer) {
-    renderer.dispose();
-    renderer.domElement = null;
-  }
-  
-  // Clear canvas data
-  canvas._threeData = null;
-}
-
-// Initialize About Page - Neural Network Visualization
-function initAboutScene() {
-  const canvas = document.getElementById('about-3d-canvas');
-  if (!canvas || typeof THREE === 'undefined') return;
-  
-  // Cleanup existing scene if any
-  cleanupScene('about-3d-canvas');
-  
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-  
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-  camera.position.set(0, 0, 8);
-  
-  // Lights
-  const ambLight = new THREE.AmbientLight(0xffd700, 0.3);
-  scene.add(ambLight);
-  const pointLight = new THREE.PointLight(0xff2244, 2, 20);
-  pointLight.position.set(3, 3, 4);
-  scene.add(pointLight);
-  
-  // Create neural network nodes
-  const nodes = [];
-  const nodeGroup = new THREE.Group();
-  const connections = [];
-  
-  const nodeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
-  const nodeMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffd700,
-    emissive: 0xffaa00,
-    emissiveIntensity: 0.8,
-    metalness: 0.9,
-    roughness: 0.1
-  });
-  
-  const lineMaterial = new THREE.LineBasicMaterial({
-    color: 0xff2244,
-    transparent: true,
-    opacity: 0.4
-  });
-  
-  // Create random nodes in a cloud formation
-  for (let i = 0; i < 25; i++) {
-    const node = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
-    node.position.set(
-      (Math.random() - 0.5) * 6,
-      (Math.random() - 0.5) * 4,
-      (Math.random() - 0.5) * 3
-    );
-    node.velocity = {
-      x: (Math.random() - 0.5) * 0.02,
-      y: (Math.random() - 0.5) * 0.02,
-      z: (Math.random() - 0.5) * 0.02
-    };
-    node.userData.pulseOffset = Math.random() * Math.PI * 2;
-    nodes.push(node);
-    nodeGroup.add(node);
-  }
-  
-  scene.add(nodeGroup);
-  
-  // Store scene data for cleanup
-  canvas._threeData = { scene, renderer, camera, objects: [...nodes] };
-  
-  // Animation loop
-  let time = 0;
-  function animate() {
-    if (!canvas._threeData) return;
-    requestAnimationFrame(animate);
-    time += 0.015;
-    
-    // Animate nodes
-    nodes.forEach((node, i) => {
-      node.position.x += node.velocity.x;
-      node.position.y += node.velocity.y;
-      node.position.z += node.velocity.z;
-      
-      // Bounce off boundaries
-      if (Math.abs(node.position.x) > 3.5) node.velocity.x *= -1;
-      if (Math.abs(node.position.y) > 2.5) node.velocity.y *= -1;
-      if (Math.abs(node.position.z) > 2) node.velocity.z *= -1;
-      
-      // Pulse effect
-      const scale = 1 + Math.sin(time * 2 + node.userData.pulseOffset) * 0.2;
-      node.scale.set(scale, scale, scale);
-      node.material.emissiveIntensity = 0.6 + Math.sin(time * 3 + node.userData.pulseOffset) * 0.3;
-    });
-    
-    // Draw connections between nearby nodes
-    // Remove old connections
-    connections.forEach(conn => scene.remove(conn));
-    connections.length = 0;
-    
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = nodes[i].position.x - nodes[j].position.x;
-        const dy = nodes[i].position.y - nodes[j].position.y;
-        const dz = nodes[i].position.z - nodes[j].position.z;
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        if (dist < 2.5) {
-          const points = [nodes[i].position, nodes[j].position];
-          const geometry = new THREE.BufferGeometry().setFromPoints(points);
-          const line = new THREE.Line(geometry, lineMaterial.clone());
-          line.material.opacity = 0.4 * (1 - dist / 2.5);
-          scene.add(line);
-          connections.push(line);
-          canvas._threeData.objects.push(line);
-        }
-      }
-    }
-    
-    // Slow rotation
-    nodeGroup.rotation.y = time * 0.15;
-    nodeGroup.rotation.x = Math.sin(time * 0.3) * 0.1;
-    
-    renderer.render(scene, camera);
-  }
-  animate();
-  
-  // Resize handler with ResizeObserver for container-based canvases
-  function onResize() {
-    if (!canvas._threeData) return;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener('resize', onResize);
-  
-  // Also observe container size changes
-  const resizeObserver = new ResizeObserver(() => {
-    onResize();
-  });
-  resizeObserver.observe(canvas);
-}
-
-// Initialize Skills Page - Tech Core Sphere
-function initSkillsScene() {
-  const canvas = document.getElementById('skills-3d-canvas');
-  if (!canvas || typeof THREE === 'undefined') return;
-  
-  cleanupScene('skills-3d-canvas');
-  
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-  
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-  camera.position.set(0, 0, 6);
-  
-  // Lights
-  const ambLight = new THREE.AmbientLight(0xff2244, 0.4);
-  scene.add(ambLight);
-  const redLight = new THREE.PointLight(0xff2244, 3, 15);
-  redLight.position.set(2, 2, 3);
-  scene.add(redLight);
-  const goldLight = new THREE.PointLight(0xffd700, 2, 15);
-  goldLight.position.set(-2, -1, 3);
-  scene.add(goldLight);
-  
-  // Central core sphere
-  const coreGeometry = new THREE.IcosahedronGeometry(1, 2);
-  const coreMaterial = new THREE.MeshStandardMaterial({
-    color: 0xff2244,
-    emissive: 0xff1133,
-    emissiveIntensity: 0.7,
-    metalness: 0.8,
-    roughness: 0.2,
-    wireframe: true
-  });
-  const core = new THREE.Mesh(coreGeometry, coreMaterial);
-  scene.add(core);
-  
-  // Inner solid core
-  const innerCore = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.6, 1),
-    new THREE.MeshStandardMaterial({
-      color: 0xffd700,
-      emissive: 0xffaa00,
-      emissiveIntensity: 0.9,
-      metalness: 0.9,
-      roughness: 0.1
-    })
-  );
-  scene.add(innerCore);
-  
-  // Orbiting elements
-  const orbiters = [];
-  const orbiterGeometry = new THREE.OctahedronGeometry(0.2, 0);
-  const orbiterMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffd700,
-    emissive: 0xff8800,
-    emissiveIntensity: 0.6,
-    metalness: 0.7,
-    roughness: 0.3
-  });
-  
-  for (let i = 0; i < 12; i++) {
-    const orbiter = new THREE.Mesh(orbiterGeometry, orbiterMaterial.clone());
-    const orbitRadius = 2.2 + Math.random() * 0.5;
-    const orbitSpeed = 0.5 + Math.random() * 0.8;
-    const orbitInclination = (Math.random() - 0.5) * Math.PI * 0.5;
-    
-    orbiter.userData.orbitRadius = orbitRadius;
-    orbiter.userData.orbitSpeed = orbitSpeed;
-    orbiter.userData.orbitInclination = orbitInclination;
-    orbiter.userData.orbitAngle = (i / 12) * Math.PI * 2;
-    
-    orbiters.push(orbiter);
-    scene.add(orbiter);
-  }
-  
-  // Particle ring
-  const particleCount = 200;
-  const particleGeometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(particleCount * 3);
-  
-  for (let i = 0; i < particleCount; i++) {
-    const angle = (i / particleCount) * Math.PI * 2;
-    const radius = 3 + Math.random() * 0.5;
-    positions[i * 3] = Math.cos(angle) * radius;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
-    positions[i * 3 + 2] = Math.sin(angle) * radius;
-  }
-  
-  particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const particleMaterial = new THREE.PointsMaterial({
-    color: 0xff2244,
-    size: 0.05,
-    transparent: true,
-    opacity: 0.6
-  });
-  const particles = new THREE.Points(particleGeometry, particleMaterial);
-  scene.add(particles);
-  
-  canvas._threeData = { scene, renderer, camera, objects: [core, innerCore, ...orbiters, particles] };
-  
-  let time = 0;
-  function animate() {
-    if (!canvas._threeData) return;
-    requestAnimationFrame(animate);
-    time += 0.02;
-    
-    // Rotate core
-    core.rotation.y += 0.01;
-    core.rotation.x += 0.005;
-    innerCore.rotation.y -= 0.015;
-    innerCore.rotation.z += 0.008;
-    
-    // Pulse core
-    const pulse = 1 + Math.sin(time * 2) * 0.05;
-    core.scale.set(pulse, pulse, pulse);
-    
-    // Animate orbiters
-    orbiters.forEach(orbiter => {
-      orbiter.userData.orbitAngle += orbiter.userData.orbitSpeed * 0.02;
-      const r = orbiter.userData.orbitRadius;
-      const inc = orbiter.userData.orbitInclination;
-      const angle = orbiter.userData.orbitAngle;
-      
-      orbiter.position.x = Math.cos(angle) * r * Math.cos(inc);
-      orbiter.position.y = Math.sin(angle) * r;
-      orbiter.position.z = Math.cos(angle) * r * Math.sin(inc);
-      
-      orbiter.rotation.x += 0.03;
-      orbiter.rotation.y += 0.02;
-    });
-    
-    // Rotate particle ring
-    particles.rotation.y -= 0.005;
-    particles.rotation.z = Math.sin(time * 0.5) * 0.1;
-    
-    renderer.render(scene, camera);
-  }
-  animate();
-  
-  function onResize() {
-    if (!canvas._threeData) return;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener('resize', onResize);
-}
-
-// Initialize Projects Page - Data Tunnel
-function initProjectsScene() {
-  const canvas = document.getElementById('projects-3d-canvas');
-  if (!canvas || typeof THREE === 'undefined') return;
-  
-  cleanupScene('projects-3d-canvas');
-  
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x000000, 0);
-  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-  
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-  camera.position.set(0, 0, 0);
-  
-  // Fog for depth
-  scene.fog = new THREE.FogExp2(0x050205, 0.15);
-  
-  // Lights
-  const ambLight = new THREE.AmbientLight(0xffd700, 0.2);
-  scene.add(ambLight);
-  const gridLight = new THREE.PointLight(0xff2244, 2, 20);
-  gridLight.position.set(0, 5, -10);
-  scene.add(gridLight);
-  
-  // Grid floor and ceiling
-  const gridHelperBottom = new THREE.GridHelper(40, 40, 0xff2244, 0x110508);
-  gridHelperBottom.position.y = -2;
-  gridHelperBottom.position.z = -10;
-  scene.add(gridHelperBottom);
-  
-  const gridHelperTop = new THREE.GridHelper(40, 40, 0xffd700, 0x110508);
-  gridHelperTop.position.y = 2;
-  gridHelperTop.position.z = -10;
-  scene.add(gridHelperTop);
-  
-  // Moving data cubes
-  const cubes = [];
-  const cubeGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-  
-  for (let i = 0; i < 40; i++) {
-    const material = new THREE.MeshStandardMaterial({
-      color: Math.random() > 0.5 ? 0xff2244 : 0xffd700,
-      emissive: Math.random() > 0.5 ? 0xff1133 : 0xffaa00,
-      emissiveIntensity: 0.6,
-      metalness: 0.7,
-      roughness: 0.2,
-      transparent: true,
-      opacity: 0.8
-    });
-    
-    const cube = new THREE.Mesh(cubeGeometry, material);
-    cube.position.set(
-      (Math.random() - 0.5) * 8,
-      (Math.random() - 0.5) * 3,
-      -Math.random() * 30 - 5
-    );
-    cube.velocity = 0.1 + Math.random() * 0.15;
-    cube.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
-    
-    cubes.push(cube);
-    scene.add(cube);
-  }
-  
-  // Starfield particles
-  const starCount = 300;
-  const starGeometry = new THREE.BufferGeometry();
-  const starPositions = new Float32Array(starCount * 3);
-  
-  for (let i = 0; i < starCount; i++) {
-    starPositions[i * 3] = (Math.random() - 0.5) * 50;
-    starPositions[i * 3 + 1] = (Math.random() - 0.5) * 50;
-    starPositions[i * 3 + 2] = -Math.random() * 50 - 10;
-  }
-  
-  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-  const starMaterial = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.08,
-    transparent: true,
-    opacity: 0.6
-  });
-  const stars = new THREE.Points(starGeometry, starMaterial);
-  scene.add(stars);
-  
-  canvas._threeData = { scene, renderer, camera, objects: [gridHelperBottom, gridHelperTop, ...cubes, stars] };
-  
-  function animate() {
-    if (!canvas._threeData) return;
-    requestAnimationFrame(animate);
-    
-    // Move cubes toward camera
-    cubes.forEach(cube => {
-      cube.position.z += cube.velocity;
-      cube.rotation.x += 0.02;
-      cube.rotation.y += 0.03;
-      
-      // Reset when passing camera
-      if (cube.position.z > 2) {
-        cube.position.z = -35;
-        cube.position.x = (Math.random() - 0.5) * 8;
-        cube.position.y = (Math.random() - 0.5) * 3;
-      }
-    });
-    
-    // Subtle camera movement
-    camera.position.x = Math.sin(Date.now() * 0.0003) * 0.5;
-    camera.position.y = Math.cos(Date.now() * 0.0005) * 0.3;
-    
-    renderer.render(scene, camera);
-  }
-  animate();
-  
-  function onResize() {
-    if (!canvas._threeData) return;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-  window.addEventListener('resize', onResize);
-}
-
-// Hook into page navigation to initialize scenes
-(function() {
-  const originalGoPage = window.goPage;
-  // ────────────────────────────────────────
-  // CONTACT PAGE — EARTH GLOBE WITH JAKARTA MARKER
-  // ────────────────────────────────────────
-  function initContactScene() {
-    cleanupScene('contact-3d-canvas');
-    const canvas = document.getElementById('contact-3d-canvas');
-    if (!canvas) return;
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    camera.position.z = 3.5;
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    // Earth sphere
-    const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
-    const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x1a3a5c,
-      emissive: 0x0a1628,
-      specular: 0x112244,
-      shininess: 15,
-      transparent: true,
-      opacity: 0.9
-    });
-    const earth = new THREE.Mesh(earthGeometry, earthMaterial);
-    scene.add(earth);
-
-    // Wireframe overlay
-    const wireGeometry = new THREE.WireframeGeometry(earthGeometry);
-    const wireMaterial = new THREE.LineBasicMaterial({ color: 0xff2244, transparent: true, opacity: 0.3 });
-    const wireframe = new THREE.LineSegments(wireGeometry, wireMaterial);
-    earth.add(wireframe);
-
-    // Jakarta marker (approximate coordinates: -6.2° S, 106.8° E)
-    const jakartaLat = -6.2;
-    const jakartaLon = 106.8;
-    
-    // Convert lat/lon to 3D position on sphere
-    const phi = (90 - jakartaLat) * (Math.PI / 180);
-    const theta = (jakartaLon + 180) * (Math.PI / 180);
-    const radius = 1.02;
-    
-    const jakartaX = -radius * Math.sin(phi) * Math.cos(theta);
-    const jakartaY = radius * Math.cos(phi);
-    const jakartaZ = radius * Math.sin(phi) * Math.sin(theta);
-
-    // Jakarta marker glow
-    const markerGeometry = new THREE.SphereGeometry(0.06, 32, 32);
-    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700 });
-    const jakartaMarker = new THREE.Mesh(markerGeometry, markerMaterial);
-    jakartaMarker.position.set(jakartaX, jakartaY, jakartaZ);
-    earth.add(jakartaMarker);
-
-    // Marker pulse ring
-    const ringGeometry = new THREE.RingGeometry(0.08, 0.12, 32);
-    const ringMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xff2244, 
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8
-    });
-    const jakartaRing = new THREE.Mesh(ringGeometry, ringMaterial);
-    jakartaRing.position.set(jakartaX, jakartaY, jakartaZ);
-    jakartaRing.lookAt(new THREE.Vector3(0, 0, 0));
-    earth.add(jakartaRing);
-
-    // Stars background
-    const starCount = 200;
-    const starGeometry = new THREE.BufferGeometry();
-    const starPositions = new Float32Array(starCount * 3);
-    for (let i = 0; i < starCount; i++) {
-      starPositions[i * 3] = (Math.random() - 0.5) * 15;
-      starPositions[i * 3 + 1] = (Math.random() - 0.5) * 15;
-      starPositions[i * 3 + 2] = (Math.random() - 0.5) * 15 - 3;
-    }
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    const starMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.04, transparent: true, opacity: 0.6 });
-    const stars = new THREE.Points(starGeometry, starMaterial);
-    scene.add(stars);
-
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffd700, 0.8);
-    directionalLight.position.set(5, 3, 5);
-    scene.add(directionalLight);
-
-    // Auto rotation
-    let autoRotate = true;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-
-    // Mouse interaction
-    let isDragging = false;
-    let prevMouse = { x: 0, y: 0 };
-    
-    canvas.addEventListener('mousedown', e => {
-      isDragging = true;
-      prevMouse = { x: e.clientX, y: e.clientY };
-      autoRotate = false;
-    });
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      setTimeout(() => { autoRotate = true; }, 2000);
-    });
-    window.addEventListener('mousemove', e => {
-      if (!isDragging) return;
-      const deltaX = e.clientX - prevMouse.x;
-      const deltaY = e.clientY - prevMouse.y;
-      earth.rotation.y += deltaX * 0.005;
-      earth.rotation.x += deltaY * 0.005;
-      prevMouse = { x: e.clientX, y: e.clientY };
-    });
-
-    // Touch support
-    canvas.addEventListener('touchstart', e => {
-      isDragging = true;
-      prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      autoRotate = false;
-    }, { passive: true });
-    canvas.addEventListener('touchend', () => {
-      isDragging = false;
-      setTimeout(() => { autoRotate = true; }, 2000);
-    });
-    canvas.addEventListener('touchmove', e => {
-      if (!isDragging) return;
-      const deltaX = e.touches[0].clientX - prevMouse.x;
-      const deltaY = e.touches[0].clientY - prevMouse.y;
-      earth.rotation.y += deltaX * 0.005;
-      earth.rotation.x += deltaY * 0.005;
-      prevMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }, { passive: true });
-
-    // Resize handler
-    function resize() {
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    }
-    window.addEventListener('resize', resize);
-
-    // Animate
-    function animate() {
-      requestAnimationFrame(animate);
-      
-      if (autoRotate) {
-        earth.rotation.y += 0.002;
-      }
-      
-      // Pulse ring animation
-      const pulse = 1 + Math.sin(Date.now() * 0.003) * 0.15;
-      jakartaRing.scale.set(pulse, pulse, 1);
-      ringMaterial.opacity = 0.8 - Math.sin(Date.now() * 0.003) * 0.3;
-
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    canvas._threeData = { scene, renderer, camera, objects: [earth, stars] };
-  }
-
-  window.goPage = function(id) {
-    // Call original function
-    if (originalGoPage) originalGoPage(id);
-    
-    // Initialize appropriate scene after a short delay
-    setTimeout(() => {
-      if (id === 'about') {
-        initAboutScene();
-      } else if (id === 'skills') {
-        initSkillsScene();
-      } else if (id === 'projects') {
-        initProjectsScene();
-      } else if (id === 'contact') {
-        initContactScene();
-      } else if (id === 'home') {
-        // Cleanup other scenes when returning home
-        cleanupScene('about-3d-canvas');
-        cleanupScene('skills-3d-canvas');
-        cleanupScene('projects-3d-canvas');
-        cleanupScene('contact-3d-canvas');
-      }
-    }, 100);
-  };
-  
-  // Initialize scene for currently active page on load
-  setTimeout(() => {
-    const activePage = document.querySelector('.page.active');
-    if (activePage) {
-      const pageId = activePage.id.replace('page-', '');
-      if (pageId === 'about') initAboutScene();
-      else if (pageId === 'skills') initSkillsScene();
-      else if (pageId === 'projects') initProjectsScene();
-      else if (pageId === 'contact') initContactScene();
-    }
-  }, 500);
-})();
 </script>
 </body>
 </html>
